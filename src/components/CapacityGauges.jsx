@@ -86,8 +86,13 @@ export default function CapacityGauges() {
                 {dev.name}
               </span>
               <span className="text-xs text-slate-500 mt-0.5">
-                {dev.assigned}h / {dev.capacity}h
+                {Math.round(dev.assigned * 10) / 10}h / {dev.capacity}h
               </span>
+              {dev.spent > 0 && (
+                <span className="text-xs text-emerald-600 mt-0.5">
+                  {Math.round(dev.spent * 10) / 10}h spent &middot; {Math.round(dev.remaining * 10) / 10}h left
+                </span>
+              )}
               {isOver && (
                 <span className="mt-2 text-xs font-medium text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
                   OVERLOADED

@@ -8,7 +8,10 @@ export default function ExportPanel() {
     tickets,
     totalCapacity,
     totalAssigned,
+    totalTimeSpent,
+    totalWork,
     loadPercentage,
+    sprintProgress,
     overloadedCount,
     atRiskTickets,
     lowPriorityCount,
@@ -26,11 +29,17 @@ export default function ExportPanel() {
     .map((d) => d.name);
 
   const summaryLines = [
-    `Total Sprint Load: ${loadPercentage}% (${Math.round(totalAssigned)}h / ${totalCapacity}h)`,
+    `Total Sprint Load: ${loadPercentage}% (${Math.round(totalWork)}h / ${totalCapacity}h)`,
   ];
 
+  if (totalTimeSpent > 0) {
+    summaryLines.push(
+      `Time Tracking: ${Math.round(totalTimeSpent)}h spent, ${Math.round(totalAssigned)}h remaining (${sprintProgress}% complete)`
+    );
+  }
+
   if (loadPercentage > 100) {
-    const excessHours = Math.round(totalAssigned - totalCapacity);
+    const excessHours = Math.round(totalWork - totalCapacity);
     summaryLines.push(
       `The sprint is over-committed by ${excessHours} hours.`
     );
@@ -51,7 +60,7 @@ export default function ExportPanel() {
   if (loadPercentage > 100 && lowPriorityCount > 0) {
     const ticketsToMove = Math.min(
       lowPriorityCount,
-      Math.ceil((totalAssigned - totalCapacity) / 4)
+      Math.ceil((totalWork - totalCapacity) / 4)
     );
     summaryLines.push(
       `Recommendation: Move ${ticketsToMove} Low-priority ticket(s) to next sprint.`

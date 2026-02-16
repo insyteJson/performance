@@ -118,25 +118,43 @@ export function SprintProvider({ children }) {
     (sum, t) => sum + t.estimateHours,
     0
   );
+  const totalTimeSpent = state.tickets.reduce(
+    (sum, t) => sum + (t.timeSpentHours || 0),
+    0
+  );
+  // totalAssigned = remaining estimate, totalWork = spent + remaining
+  const totalWork = totalTimeSpent + totalAssigned;
   const loadPercentage =
-    totalCapacity > 0 ? Math.round((totalAssigned / totalCapacity) * 100) : 0;
+    totalCapacity > 0 ? Math.round((totalWork / totalCapacity) * 100) : 0;
+  const sprintProgress =
+    totalWork > 0 ? Math.round((totalTimeSpent / totalWork) * 100) : 0;
 
-  const devLoadMap = new Map();
-  state.devs.forEach((d) => devLoadMap.set(d.name, 0));
+  const devLoadMap = new Map(); // remaining estimate per dev
+  const devSpentMap = new Map(); // time spent per dev
+  state.devs.forEach((d) => {
+    devLoadMap.set(d.name, 0);
+    devSpentMap.set(d.name, 0);
+  });
   state.tickets.forEach((t) => {
     if (devLoadMap.has(t.assignee)) {
       devLoadMap.set(t.assignee, devLoadMap.get(t.assignee) + t.estimateHours);
+      devSpentMap.set(t.assignee, devSpentMap.get(t.assignee) + (t.timeSpentHours || 0));
     }
   });
 
-  const devLoads = state.devs.map((d) => ({
-    ...d,
-    assigned: devLoadMap.get(d.name) || 0,
-    loadPercent:
-      d.capacity > 0
-        ? Math.round(((devLoadMap.get(d.name) || 0) / d.capacity) * 100)
-        : 0,
-  }));
+  const devLoads = state.devs.map((d) => {
+    const remaining = devLoadMap.get(d.name) || 0;
+    const spent = devSpentMap.get(d.name) || 0;
+    const total = spent + remaining;
+    return {
+      ...d,
+      assigned: total,
+      spent,
+      remaining,
+      loadPercent:
+        d.capacity > 0 ? Math.round((total / d.capacity) * 100) : 0,
+    };
+  });
 
   // Count overloaded devs
   const overloadedCount = devLoads.filter((d) => d.loadPercent > 100).length;
@@ -163,7 +181,8 @@ export function SprintProvider({ children }) {
   let cumulative = 0;
   const atRiskTickets = [];
   ticketsByPriority.forEach((t) => {
-    cumulative += t.estimateHours;
+    const ticketWork = (t.timeSpentHours || 0) + t.estimateHours;
+    cumulative += ticketWork;
     if (cumulative > totalCapacity) {
       atRiskTickets.push(t);
     }
@@ -184,7 +203,10 @@ export function SprintProvider({ children }) {
     reset,
     totalCapacity,
     totalAssigned,
+    totalTimeSpent,
+    totalWork,
     loadPercentage,
+    sprintProgress,
     devLoads,
     overloadedCount,
     atRiskTickets,
