@@ -35,23 +35,29 @@ export function parseXML(xmlString) {
     const updated = getText('updated');
     const description = getText('description');
 
-    // Extract time fields from Jira XML
-    // timeestimate = current remaining estimate, timespent = actual logged time
-    const timeestimate = getText('timeestimate');
-    const timespent = getText('timespent');
-    const timeoriginalestimate = getText('timeoriginalestimate');
+    // Extract time fields from Jira XML.
+    // Values are in the "seconds" attribute (e.g. <timeestimate seconds="1200">20 min</timeestimate>).
+    // Fall back to text content for simpler XML exports that use raw seconds as text.
+    const getSeconds = (tag) => {
+      const el = item.querySelector(tag);
+      if (!el) return 0;
+      const fromAttr = parseInt(el.getAttribute('seconds')) || 0;
+      if (fromAttr > 0) return fromAttr;
+      return parseInt(el.textContent) || 0;
+    };
 
-    let estimateHours = 0;
-    // Prefer timeestimate (remaining), fall back to timeoriginalestimate
-    const rawEstimate = parseInt(timeestimate) || 0;
-    const rawOriginal = parseInt(timeoriginalestimate) || 0;
-    if (rawEstimate > 0) {
-      estimateHours = rawEstimate / 3600;
-    } else if (rawOriginal > 0) {
-      estimateHours = rawOriginal / 3600;
-    }
+    // Remaining estimate: timeestimate → aggregatetimeremainingestimate → timeoriginalestimate → aggregatetimeoriginalestimate
+    const rawEstimate =
+      getSeconds('timeestimate') ||
+      getSeconds('aggregatetimeremainingestimate') ||
+      getSeconds('timeoriginalestimate') ||
+      getSeconds('aggregatetimeoriginalestimate');
 
-    const timeSpentHours = (parseInt(timespent) || 0) / 3600;
+    let estimateHours = rawEstimate > 0 ? rawEstimate / 3600 : 0;
+
+    // Time spent: timespent → aggregatetimespent
+    const rawSpent = getSeconds('timespent') || getSeconds('aggregatetimespent');
+    const timeSpentHours = rawSpent > 0 ? rawSpent / 3600 : 0;
 
     // If no estimate from time fields, check for explicit story points custom field
     if (estimateHours === 0) {
