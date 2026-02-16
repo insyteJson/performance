@@ -35,7 +35,7 @@ export function parseXML(xmlString) {
     const updated = getText('updated');
     const description = getText('description');
 
-    // Extract time fields from Jira XML — only timeestimate and timespent.
+    // Extract time fields from Jira XML — timeoriginalestimate, timeestimate, and timespent.
     // Values are in the "seconds" attribute (e.g. <timeestimate seconds="1200">20 min</timeestimate>).
     const getSeconds = (tag) => {
       const el = item.querySelector(tag);
@@ -45,11 +45,21 @@ export function parseXML(xmlString) {
       return parseInt(el.textContent) || 0;
     };
 
+    // Original estimate is what was initially estimated
+    const rawOriginalEstimate = getSeconds('timeoriginalestimate');
+    let originalEstimateHours = rawOriginalEstimate > 0 ? rawOriginalEstimate / 3600 : 0;
+
+    // Remaining estimate (original minus logged time, can be 0 when complete)
     const rawEstimate = getSeconds('timeestimate');
     let estimateHours = rawEstimate > 0 ? rawEstimate / 3600 : 0;
 
     const rawSpent = getSeconds('timespent');
     const timeSpentHours = rawSpent > 0 ? rawSpent / 3600 : 0;
+
+    // If no original estimate, fall back to remaining estimate
+    if (originalEstimateHours === 0 && estimateHours > 0) {
+      originalEstimateHours = estimateHours;
+    }
 
     // If no estimate from time fields, check for explicit story points custom field
     if (estimateHours === 0) {
@@ -118,6 +128,7 @@ export function parseXML(xmlString) {
       created,
       updated,
       description,
+      originalEstimateHours,
       estimateHours,
       timeSpentHours,
       epic: epic || parentKey || '',
@@ -355,11 +366,13 @@ export function buildHierarchy(tickets) {
         .filter(Boolean);
 
       // Aggregate subtask data to the story
+      let aggregatedOriginalEstimate = t.originalEstimateHours || 0;
       let aggregatedEstimate = t.estimateHours || 0;
       let aggregatedSpent = t.timeSpentHours || 0;
 
       if (subtasks.length > 0) {
         // If story has subtasks, use aggregated data from subtasks
+        aggregatedOriginalEstimate = subtasks.reduce((sum, st) => sum + (st.originalEstimateHours || 0), 0);
         aggregatedEstimate = subtasks.reduce((sum, st) => sum + (st.estimateHours || 0), 0);
         aggregatedSpent = subtasks.reduce((sum, st) => sum + (st.timeSpentHours || 0), 0);
       }
@@ -367,8 +380,7 @@ export function buildHierarchy(tickets) {
       storyMap.set(t.key, {
         ...t,
         subtasks,
-        originalEstimateHours: t.estimateHours,
-        originalTimeSpentHours: t.timeSpentHours,
+        originalEstimateHours: aggregatedOriginalEstimate,
         estimateHours: aggregatedEstimate,
         timeSpentHours: aggregatedSpent,
         hasSubtasks: subtasks.length > 0,

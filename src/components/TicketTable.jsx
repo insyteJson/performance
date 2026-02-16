@@ -150,7 +150,7 @@ export default function TicketTable() {
 
     filteredHierarchy.forEach(epic => {
       epic.stories.forEach(story => {
-        totalEstimate += story.estimateHours || 0;
+        totalEstimate += story.originalEstimateHours || 0;
         totalSpent += story.timeSpentHours || 0;
         ticketCount++;
       });
@@ -268,9 +268,9 @@ export default function TicketTable() {
           <tbody className="divide-y divide-slate-100">
             {filteredHierarchy.map((epic) => {
               const isEpicExpanded = expandedEpics.has(epic.name);
-              const epicEstimate = epic.stories.reduce((s, st) => s + (st.estimateHours || 0), 0);
+              const epicOriginalEstimate = epic.stories.reduce((s, st) => s + (st.originalEstimateHours || 0), 0);
               const epicSpent = epic.stories.reduce((s, st) => s + (st.timeSpentHours || 0), 0);
-              const epicRemaining = epicEstimate - epicSpent;
+              const epicRemaining = epicOriginalEstimate - epicSpent;
 
               return (
                 <EpicSection key={epic.name}>
@@ -294,7 +294,7 @@ export default function TicketTable() {
                     </td>
                     <td colSpan={4}></td>
                     <td className="px-4 py-3 text-sm text-slate-700 font-semibold tabular-nums">
-                      {epicEstimate > 0 ? `${Math.round(epicEstimate * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                      {epicOriginalEstimate > 0 ? `${Math.round(epicOriginalEstimate * 10) / 10}h` : <span className="text-slate-300">--</span>}
                     </td>
                     <td className="px-4 py-3 text-sm tabular-nums">
                       {epicSpent > 0 ? (
@@ -309,7 +309,7 @@ export default function TicketTable() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <ProgressBar spent={epicSpent} remaining={epicEstimate} />
+                      <ProgressBar spent={epicSpent} remaining={epicOriginalEstimate} />
                     </td>
                   </tr>
 
@@ -317,7 +317,7 @@ export default function TicketTable() {
                   {isEpicExpanded && epic.stories.map((story) => {
                     const isStoryExpanded = expandedStories.has(story.key);
                     const subtasks = story.subtasks || [];
-                    const storyRemaining = (story.estimateHours || 0) - (story.timeSpentHours || 0);
+                    const storyRemaining = (story.originalEstimateHours || 0) - (story.timeSpentHours || 0);
 
                     return (
                       <StorySection key={story.key}>
@@ -355,7 +355,7 @@ export default function TicketTable() {
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-600">{story.assignee}</td>
                           <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
-                            {(story.estimateHours || 0) > 0 ? `${Math.round(story.estimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                            {(story.originalEstimateHours || 0) > 0 ? `${Math.round(story.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                           </td>
                           <td className="px-4 py-3 text-sm tabular-nums">
                             {(story.timeSpentHours || 0) > 0 ? (
@@ -370,13 +370,13 @@ export default function TicketTable() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <ProgressBar spent={story.timeSpentHours || 0} remaining={story.estimateHours || 0} />
+                            <ProgressBar spent={story.timeSpentHours || 0} remaining={story.originalEstimateHours || 0} />
                           </td>
                         </tr>
 
                         {/* Subtask Rows */}
                         {isStoryExpanded && subtasks.map((st) => {
-                          const stRemaining = (st.estimateHours || 0) - (st.timeSpentHours || 0);
+                          const stRemaining = (st.originalEstimateHours || 0) - (st.timeSpentHours || 0);
                           return (
                             <tr key={st.key} className="bg-slate-50/40 hover:bg-slate-50 transition-colors">
                               <td className="px-4 py-2 pl-14"></td>
@@ -400,7 +400,7 @@ export default function TicketTable() {
                               </td>
                               <td className="px-4 py-2 text-xs text-slate-500">{st.assignee}</td>
                               <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
-                                {(st.estimateHours || 0) > 0 ? `${Math.round(st.estimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                                {(st.originalEstimateHours || 0) > 0 ? `${Math.round(st.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                               </td>
                               <td className="px-4 py-2 text-xs tabular-nums">
                                 {(st.timeSpentHours || 0) > 0 ? (
@@ -415,7 +415,7 @@ export default function TicketTable() {
                                 </span>
                               </td>
                               <td className="px-4 py-2">
-                                <ProgressBar spent={st.timeSpentHours || 0} remaining={st.estimateHours || 0} />
+                                <ProgressBar spent={st.timeSpentHours || 0} remaining={st.originalEstimateHours || 0} />
                               </td>
                             </tr>
                           );
