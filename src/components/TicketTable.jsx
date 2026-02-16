@@ -336,9 +336,14 @@ export default function TicketTable() {
                           <td className="px-4 py-3 text-sm font-mono font-medium text-indigo-600">
                             {story.key}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate" title={story.summary}>
+                          <td className="px-4 py-3 text-sm text-slate-700 max-w-xs" title={story.summary}>
                             <div className="flex items-center gap-2">
-                              {story.summary}
+                              <span className="truncate">{story.summary}</span>
+                              {story.isCustomerRequest && (
+                                <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded whitespace-nowrap" style={{ backgroundColor: '#f5e989', color: '#854d0e' }}>
+                                  Customer
+                                </span>
+                              )}
                               {subtasks.length > 0 && (
                                 <span className="text-xs text-slate-400 shrink-0">{subtasks.length} subtasks</span>
                               )}
@@ -383,10 +388,15 @@ export default function TicketTable() {
                               <td className="px-4 py-2 text-xs font-mono text-slate-400">
                                 {st.key}
                               </td>
-                              <td className="px-4 py-2 text-xs text-slate-500 max-w-xs truncate" title={st.summary}>
+                              <td className="px-4 py-2 text-xs text-slate-500 max-w-xs" title={st.summary}>
                                 <div className="flex items-center gap-1.5">
                                   <span className="w-3 h-px bg-slate-300 shrink-0"></span>
-                                  {st.summary}
+                                  <span className="truncate">{st.summary}</span>
+                                  {st.isCustomerRequest && (
+                                    <span className="shrink-0 text-[9px] font-semibold px-1 py-0.5 rounded whitespace-nowrap" style={{ backgroundColor: '#f5e989', color: '#854d0e' }}>
+                                      Customer
+                                    </span>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-4 py-2 text-xs text-slate-400">{st.type}</td>
