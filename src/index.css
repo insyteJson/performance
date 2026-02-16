@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4f46e5;
+  --color-primary-light: #6366f1;
+  --color-primary-dark: #3730a3;
+  --color-danger: #ef4444;
+  --color-danger-light: #fca5a5;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --color-surface: #ffffff;
+  --color-surface-dark: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f1f5f9;
+  color: var(--color-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 1000 !important;
+}
