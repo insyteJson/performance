@@ -7,12 +7,19 @@ const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
+
+  // Check if this is a story (has summary) or epic (has count)
+  const isStory = d.summary !== undefined;
+
   return (
     <div className="bg-white shadow-lg rounded-lg border border-slate-200 p-3 text-sm">
       <p className="font-semibold text-slate-800">{d.name}</p>
-      <p className="text-slate-600">
-        Tickets: <span className="font-medium">{d.count}</span>
-      </p>
+      {isStory && <p className="text-xs text-slate-500 mb-1">{d.summary}</p>}
+      {!isStory && (
+        <p className="text-slate-600 text-xs mb-1">
+          {d.count} user {d.count === 1 ? 'story' : 'stories'}
+        </p>
+      )}
       <p className="text-slate-600">
         Total: <span className="font-medium">{d.hours}h</span>
         {d.spent > 0 && (
@@ -66,39 +73,10 @@ export default function EpicDonutChart() {
     );
   }
 
-  // Customer vs Internal breakdown (using aggregated user stories)
-  const customerTickets = userStories.filter((t) => t.isCustomerRequest);
-  const internalTickets = userStories.filter((t) => !t.isCustomerRequest);
-
   const getTicketTotal = (t) => (t.timeSpentHours || 0) + t.estimateHours;
   const getTicketSpent = (t) => t.timeSpentHours || 0;
 
-  const customerHours = customerTickets.reduce((s, t) => s + getTicketTotal(t), 0);
-  const customerSpent = customerTickets.reduce((s, t) => s + getTicketSpent(t), 0);
-  const internalHours = internalTickets.reduce((s, t) => s + getTicketTotal(t), 0);
-  const internalSpent = internalTickets.reduce((s, t) => s + getTicketSpent(t), 0);
-  const totalHours = customerHours + internalHours;
-
-  const donutData = [
-    {
-      name: 'Customer Requests',
-      count: customerTickets.length,
-      hours: Math.round(customerHours * 10) / 10,
-      spent: Math.round(customerSpent * 10) / 10,
-      value: customerHours,
-      pct: totalHours > 0 ? Math.round((customerHours / totalHours) * 100) : 0,
-    },
-    {
-      name: 'Internal / Other',
-      count: internalTickets.length,
-      hours: Math.round(internalHours * 10) / 10,
-      spent: Math.round(internalSpent * 10) / 10,
-      value: internalHours,
-      pct: totalHours > 0 ? Math.round((internalHours / totalHours) * 100) : 0,
-    },
-  ];
-
-  // Also breakdown by epic for the outer ring (using aggregated user stories)
+  // Group stories by epic for inner ring
   const epicMap = new Map();
   userStories.forEach((t) => {
     let key = t.epic || 'No Epic';
@@ -108,13 +86,19 @@ export default function EpicDonutChart() {
       key = 'No Epic';
     }
 
-    if (!epicMap.has(key)) epicMap.set(key, { count: 0, hours: 0, spent: 0 });
+    if (!epicMap.has(key)) {
+      epicMap.set(key, { count: 0, hours: 0, spent: 0, stories: [] });
+    }
     const e = epicMap.get(key);
     e.count++;
     e.hours += getTicketTotal(t);
     e.spent += getTicketSpent(t);
+    e.stories.push(t);
   });
 
+  const totalHours = userStories.reduce((s, t) => s + getTicketTotal(t), 0);
+
+  // Inner ring: Epics (grouped)
   const epicData = Array.from(epicMap.entries())
     .map(([name, data]) => ({
       name,
@@ -123,21 +107,41 @@ export default function EpicDonutChart() {
       spent: Math.round(data.spent * 10) / 10,
       value: data.hours,
       pct: totalHours > 0 ? Math.round((data.hours / totalHours) * 100) : 0,
+      stories: data.stories,
     }))
     .sort((a, b) => b.value - a.value);
+
+  // Outer ring: Individual user stories (sorted by epic order)
+  const storyData = [];
+  epicData.forEach((epic) => {
+    epic.stories
+      .sort((a, b) => getTicketTotal(b) - getTicketTotal(a))
+      .forEach((story) => {
+        const storyHours = getTicketTotal(story);
+        storyData.push({
+          name: story.key,
+          summary: story.summary,
+          hours: Math.round(storyHours * 10) / 10,
+          spent: Math.round(getTicketSpent(story) * 10) / 10,
+          value: storyHours,
+          pct: totalHours > 0 ? Math.round((storyHours / totalHours) * 100) : 0,
+          epic: epic.name,
+        });
+      });
+  });
 
   return (
     <ChartCard
       title="Epic Distribution"
-      subtitle="Customer Requests vs. Internal work"
+      subtitle="Epics and their user stories breakdown"
       id="chart-epic"
     >
       <div className="flex flex-col md:flex-row items-center gap-6">
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
-            {/* Inner ring - Customer vs Internal */}
+            {/* Inner ring - Epics */}
             <Pie
-              data={donutData}
+              data={epicData}
               cx="50%"
               cy="50%"
               innerRadius={55}
@@ -147,44 +151,37 @@ export default function EpicDonutChart() {
               label={renderLabel}
               labelLine={false}
             >
-              <Cell fill="#6366f1" />
-              <Cell fill="#94a3b8" />
+              {epicData.map((_, idx) => (
+                <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+              ))}
             </Pie>
-            {/* Outer ring - By Epic */}
+            {/* Outer ring - User Stories */}
             <Pie
-              data={epicData}
+              data={storyData}
               cx="50%"
               cy="50%"
               innerRadius={92}
               outerRadius={115}
-              paddingAngle={2}
+              paddingAngle={1}
               dataKey="value"
             >
-              {epicData.map((_, idx) => (
-                <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-              ))}
+              {storyData.map((story, idx) => {
+                // Find epic index to match color
+                const epicIdx = epicData.findIndex(e => e.name === story.epic);
+                const epicColor = COLORS[epicIdx % COLORS.length];
+                // Make story colors slightly darker variants of their epic
+                const darker = epicColor.replace('f1', 'e1').replace('0b', '09').replace('81', '71');
+                return <Cell key={idx} fill={darker} opacity={0.7} />;
+              })}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
 
         {/* Legend */}
-        <div className="flex flex-col gap-2 min-w-44">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            Type Breakdown
-          </div>
-          {donutData.map((d, i) => (
-            <div key={d.name} className="flex items-center gap-2 text-sm">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: i === 0 ? '#6366f1' : '#94a3b8' }}
-              />
-              <span className="text-slate-700">{d.name}</span>
-              <span className="text-slate-400 ml-auto">{d.pct}%</span>
-            </div>
-          ))}
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-3 mb-1">
-            By Epic
+        <div className="flex flex-col gap-2 min-w-44 max-h-[280px] overflow-y-auto">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 sticky top-0 bg-white">
+            Epics
           </div>
           {epicData.map((d, i) => (
             <div key={d.name} className="flex items-center gap-2 text-sm">
@@ -192,8 +189,9 @@ export default function EpicDonutChart() {
                 className="w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: COLORS[i % COLORS.length] }}
               />
-              <span className="text-slate-700 truncate">{d.name}</span>
-              <span className="text-slate-400 ml-auto">{d.hours}h</span>
+              <span className="text-slate-700 truncate flex-1">{d.name}</span>
+              <span className="text-slate-400 text-xs">{d.count} stories</span>
+              <span className="text-slate-600 font-medium text-xs">{d.hours}h</span>
             </div>
           ))}
         </div>

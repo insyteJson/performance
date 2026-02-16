@@ -40,15 +40,19 @@ function ProgressBar({ spent, remaining }) {
   const total = spent + remaining;
   if (total === 0) return <span className="text-slate-400 text-xs">--</span>;
   const pct = Math.round((spent / total) * 100);
+  const isOverBudget = spent > remaining || pct > 100;
+
   return (
     <div className="flex items-center gap-2 min-w-[120px]">
       <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-emerald-500 rounded-full transition-all"
-          style={{ width: `${pct}%` }}
+          className={`h-full rounded-full transition-all ${isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}
+          style={{ width: `${Math.min(pct, 100)}%` }}
         />
       </div>
-      <span className="text-xs text-slate-500 w-8 text-right">{pct}%</span>
+      <span className={`text-xs w-8 text-right ${isOverBudget ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
+        {pct}%
+      </span>
     </div>
   );
 }
@@ -255,9 +259,9 @@ export default function TicketTable() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Priority</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Assignee</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Remaining</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Original Est.</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Spent</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Total</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Remaining</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Progress</th>
             </tr>
           </thead>
@@ -266,7 +270,7 @@ export default function TicketTable() {
               const isEpicExpanded = expandedEpics.has(epic.name);
               const epicEstimate = epic.stories.reduce((s, st) => s + (st.estimateHours || 0), 0);
               const epicSpent = epic.stories.reduce((s, st) => s + (st.timeSpentHours || 0), 0);
-              const epicTotal = epicEstimate + epicSpent;
+              const epicRemaining = epicEstimate - epicSpent;
 
               return (
                 <EpicSection key={epic.name}>
@@ -299,8 +303,10 @@ export default function TicketTable() {
                         <span className="text-slate-300">--</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 font-semibold tabular-nums">
-                      {epicTotal > 0 ? `${Math.round(epicTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                    <td className="px-4 py-3 text-sm font-semibold tabular-nums">
+                      <span className={epicRemaining < 0 ? 'text-red-600' : 'text-slate-700'}>
+                        {Math.round(epicRemaining * 10) / 10}h
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <ProgressBar spent={epicSpent} remaining={epicEstimate} />
@@ -311,7 +317,7 @@ export default function TicketTable() {
                   {isEpicExpanded && epic.stories.map((story) => {
                     const isStoryExpanded = expandedStories.has(story.key);
                     const subtasks = story.subtasks || [];
-                    const storyTotal = (story.estimateHours || 0) + (story.timeSpentHours || 0);
+                    const storyRemaining = (story.estimateHours || 0) - (story.timeSpentHours || 0);
 
                     return (
                       <StorySection key={story.key}>
@@ -358,8 +364,10 @@ export default function TicketTable() {
                               <span className="text-slate-300">--</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
-                            {storyTotal > 0 ? `${Math.round(storyTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                          <td className="px-4 py-3 text-sm font-medium tabular-nums">
+                            <span className={storyRemaining < 0 ? 'text-red-600' : 'text-slate-700'}>
+                              {Math.round(storyRemaining * 10) / 10}h
+                            </span>
                           </td>
                           <td className="px-4 py-3">
                             <ProgressBar spent={story.timeSpentHours || 0} remaining={story.estimateHours || 0} />
@@ -368,7 +376,7 @@ export default function TicketTable() {
 
                         {/* Subtask Rows */}
                         {isStoryExpanded && subtasks.map((st) => {
-                          const stTotal = (st.estimateHours || 0) + (st.timeSpentHours || 0);
+                          const stRemaining = (st.estimateHours || 0) - (st.timeSpentHours || 0);
                           return (
                             <tr key={st.key} className="bg-slate-50/40 hover:bg-slate-50 transition-colors">
                               <td className="px-4 py-2 pl-14"></td>
@@ -401,8 +409,10 @@ export default function TicketTable() {
                                   <span className="text-slate-300">--</span>
                                 )}
                               </td>
-                              <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
-                                {stTotal > 0 ? `${Math.round(stTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                              <td className="px-4 py-2 text-xs tabular-nums">
+                                <span className={stRemaining < 0 ? 'text-red-600' : 'text-slate-500'}>
+                                  {Math.round(stRemaining * 10) / 10}h
+                                </span>
                               </td>
                               <td className="px-4 py-2">
                                 <ProgressBar spent={st.timeSpentHours || 0} remaining={st.estimateHours || 0} />
@@ -429,8 +439,10 @@ export default function TicketTable() {
               <td className="px-4 py-3 text-sm font-bold text-emerald-600 tabular-nums">
                 {Math.round(totals.totalSpent * 10) / 10}h
               </td>
-              <td className="px-4 py-3 text-sm font-bold text-slate-800 tabular-nums">
-                {Math.round(totals.totalHours * 10) / 10}h
+              <td className="px-4 py-3 text-sm font-bold tabular-nums">
+                <span className={(totals.totalEstimate - totals.totalSpent) < 0 ? 'text-red-600' : 'text-slate-800'}>
+                  {Math.round((totals.totalEstimate - totals.totalSpent) * 10) / 10}h
+                </span>
               </td>
               <td className="px-4 py-3">
                 <ProgressBar spent={totals.totalSpent} remaining={totals.totalEstimate} />
