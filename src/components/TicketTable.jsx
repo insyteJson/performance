@@ -24,7 +24,7 @@ function PriorityBadge({ priority }) {
   const label = getPriorityLabel(priority);
   return (
     <span
-      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ backgroundColor: color + '18', color }}
     >
       <span
@@ -256,8 +256,8 @@ export default function TicketTable() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Key</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-[200px]">Summary</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Priority</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Priority</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Assignee</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Original Est.</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Spent</th>
@@ -336,11 +336,11 @@ export default function TicketTable() {
                           <td className="px-4 py-3 text-sm font-mono font-medium text-indigo-600">
                             {story.key}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate" title={story.summary}>
-                            <div className="flex items-center gap-2">
-                              {story.summary}
+                          <td className="px-4 py-3 text-sm text-slate-700" title={story.summary}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="truncate">{story.summary}</span>
                               {subtasks.length > 0 && (
-                                <span className="text-xs text-slate-400 shrink-0">{subtasks.length} subtasks</span>
+                                <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">{subtasks.length} subtasks</span>
                               )}
                             </div>
                           </td>
@@ -349,7 +349,7 @@ export default function TicketTable() {
                             <PriorityBadge priority={story.priority} />
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getStatusClass(story.status)}`}>
+                            <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusClass(story.status)}`}>
                               {story.status}
                             </span>
                           </td>
@@ -394,7 +394,7 @@ export default function TicketTable() {
                                 <PriorityBadge priority={st.priority} />
                               </td>
                               <td className="px-4 py-2">
-                                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getStatusClass(st.status)}`}>
+                                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusClass(st.status)}`}>
                                   {st.status}
                                 </span>
                               </td>

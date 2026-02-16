@@ -172,7 +172,7 @@ export default function SprintCutoffChart() {
             strokeDasharray="8 4"
             label={{
               value: `Team Capacity: ${totalCapacity}h`,
-              position: 'right',
+              position: 'insideTopRight',
               style: { fontSize: 12, fill: '#f59e0b', fontWeight: 600 },
             }}
           />
