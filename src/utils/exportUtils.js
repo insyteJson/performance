@@ -3,32 +3,62 @@ import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 
 /**
- * Export a single DOM element as a PNG blob
+ * Convert all SVG elements within a cloned node to inline <img> tags
+ * so html2canvas can render them correctly.
  */
-export async function exportChartAsPNG(element, filename = 'chart.png') {
-  const canvas = await html2canvas(element, {
-    backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  });
+function inlineSVGs(clonedEl, sourceEl) {
+  const clonedSVGs = clonedEl.querySelectorAll('svg');
+  const sourceSVGs = sourceEl.querySelectorAll('svg');
 
-  const link = document.createElement('a');
-  link.download = filename;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  clonedSVGs.forEach((svg, i) => {
+    const source = sourceSVGs[i];
+    if (!source) return;
+
+    // Get rendered dimensions from the original DOM element
+    const { width, height } = source.getBoundingClientRect();
+
+    // Ensure the SVG has explicit dimensions for serialization
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const encodedData = btoa(unescape(encodeURIComponent(svgData)));
+
+    const img = document.createElement('img');
+    img.src = `data:image/svg+xml;base64,${encodedData}`;
+    img.style.width = `${width}px`;
+    img.style.height = `${height}px`;
+    img.style.display = 'block';
+
+    svg.parentNode.replaceChild(img, svg);
+  });
 }
 
 /**
- * Export a DOM element to a canvas (for internal use)
+ * Export a DOM element to a canvas with proper SVG handling
  */
 async function elementToCanvas(element) {
   return html2canvas(element, {
     backgroundColor: '#ffffff',
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     logging: false,
+    onclone: (_doc, clonedEl) => {
+      inlineSVGs(clonedEl, element);
+    },
   });
+}
+
+/**
+ * Export a single DOM element as a PNG download
+ */
+export async function exportChartAsPNG(element, filename = 'chart.png') {
+  const canvas = await elementToCanvas(element);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 }
 
 /**

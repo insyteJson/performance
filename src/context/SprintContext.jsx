@@ -141,10 +141,23 @@ export function SprintProvider({ children }) {
   // Count overloaded devs
   const overloadedCount = devLoads.filter((d) => d.loadPercent > 100).length;
 
-  // Tickets over capacity
+  // Ticket type hierarchy: higher-tier types are prioritized first
+  const typeHierarchy = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('bug') || t.includes('blocker')) return 0;
+    if (t.includes('story')) return 1;
+    if (t.includes('task')) return 2;
+    if (t.includes('sub-task') || t.includes('subtask')) return 3;
+    if (t.includes('spike') || t.includes('research')) return 4;
+    return 2; // default to task level
+  };
+
+  // Sort by priority first, then by type hierarchy within the same priority
   const ticketsByPriority = [...state.tickets].sort((a, b) => {
-    const order = { Highest: 0, High: 1, Low: 2, Lowest: 3 };
-    return (order[a.priority] ?? 4) - (order[b.priority] ?? 4);
+    const priorityOrder = { Highest: 0, High: 1, Low: 2, Lowest: 3 };
+    const pDiff = (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
+    if (pDiff !== 0) return pDiff;
+    return typeHierarchy(a.type) - typeHierarchy(b.type);
   });
 
   let cumulative = 0;
