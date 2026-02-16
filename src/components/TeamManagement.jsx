@@ -151,21 +151,21 @@ export default function TeamManagement() {
         )}
 
         {/* Add new dev */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           <input
             type="text"
             value={newDevName}
             onChange={(e) => setNewDevName(e.target.value)}
             placeholder="Add team member..."
-            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="min-w-0 flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             onKeyDown={(e) => e.key === 'Enter' && handleAddDev()}
           />
           <button
             onClick={handleAddDev}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-1 shrink-0"
+            className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-1 shrink-0"
           >
             <UserPlus size={16} />
-            Add
+            <span className="hidden sm:inline">Add</span>
           </button>
         </div>
 

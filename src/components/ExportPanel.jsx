@@ -16,6 +16,7 @@ export default function ExportPanel() {
   } = useSprint();
 
   const [exporting, setExporting] = useState(null);
+  const [exportError, setExportError] = useState('');
 
   if (tickets.length === 0) return null;
 
@@ -84,22 +85,38 @@ export default function ExportPanel() {
 
   const handleExportPDF = async () => {
     setExporting('pdf');
+    setExportError('');
     try {
-      await exportAllAsPDF(getChartElements(), summaryText);
+      const elements = getChartElements();
+      if (elements.length === 0) {
+        setExportError('No charts found on page. Make sure data is loaded.');
+        return;
+      }
+      await exportAllAsPDF(elements, summaryText);
     } catch (err) {
       console.error('PDF export failed:', err);
+      setExportError(`PDF export failed: ${err.message}`);
+    } finally {
+      setExporting(null);
     }
-    setExporting(null);
   };
 
   const handleExportZIP = async () => {
     setExporting('zip');
+    setExportError('');
     try {
-      await exportAllAsZIP(getChartElements(), chartNames);
+      const elements = getChartElements();
+      if (elements.length === 0) {
+        setExportError('No charts found on page. Make sure data is loaded.');
+        return;
+      }
+      await exportAllAsZIP(elements, chartNames);
     } catch (err) {
       console.error('ZIP export failed:', err);
+      setExportError(`ZIP export failed: ${err.message}`);
+    } finally {
+      setExporting(null);
     }
-    setExporting(null);
   };
 
   return (
@@ -122,6 +139,12 @@ export default function ExportPanel() {
           </p>
         ))}
       </div>
+
+      {exportError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {exportError}
+        </div>
+      )}
 
       {/* Export Buttons */}
       <div className="flex flex-wrap gap-3">
