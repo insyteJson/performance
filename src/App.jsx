@@ -13,7 +13,7 @@ import ExportPanel from './components/ExportPanel';
 import TicketTable from './components/TicketTable';
 
 function Dashboard() {
-  const { isLoaded, devs, tickets } = useSprint();
+  const { isLoaded, devs, userStories } = useSprint();
   const [sidebarTab, setSidebarTab] = useState('import');
   const [view, setView] = useState('dashboard');
 
@@ -59,9 +59,9 @@ function Dashboard() {
                 >
                   <Table2 size={15} />
                   Tickets
-                  {tickets.length > 0 && (
+                  {userStories.length > 0 && (
                     <span className="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">
-                      {tickets.length}
+                      {userStories.length}
                     </span>
                   )}
                 </button>

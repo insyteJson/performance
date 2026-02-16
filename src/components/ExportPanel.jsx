@@ -5,7 +5,7 @@ import { exportAllAsPDF, exportAllAsZIP } from '../utils/exportUtils';
 
 export default function ExportPanel() {
   const {
-    tickets,
+    userStories,
     totalCapacity,
     totalAssigned,
     totalTimeSpent,
@@ -21,7 +21,7 @@ export default function ExportPanel() {
   const [exporting, setExporting] = useState(null);
   const [exportError, setExportError] = useState('');
 
-  if (tickets.length === 0) return null;
+  if (userStories.length === 0) return null;
 
   // Build summary text
   const overloadedDevNames = devLoads

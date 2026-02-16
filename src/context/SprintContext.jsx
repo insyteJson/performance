@@ -1,10 +1,12 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
-import { extractAssignees } from '../utils/xmlParser';
+import { extractAssignees, buildHierarchy } from '../utils/xmlParser';
 
 const SprintContext = createContext(null);
 
 const initialState = {
-  tickets: [],
+  tickets: [], // All tickets (for table display)
+  userStories: [], // Aggregated user stories (for charts)
+  hierarchy: [], // Structured hierarchy tree
   devs: [],
   isLoaded: false,
 };
@@ -12,9 +14,14 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_TICKETS': {
-      const tickets = action.payload;
+      const rawTickets = action.payload;
+
+      // Build hierarchy and get aggregated user stories
+      const { allTickets, userStories, hierarchy } = buildHierarchy(rawTickets);
+
+      // Extract assignees from user stories (aggregated data)
       const existingDevMap = new Map(state.devs.map((d) => [d.name, d]));
-      const extractedDevs = extractAssignees(tickets);
+      const extractedDevs = extractAssignees(userStories);
 
       // Merge: keep existing capacity overrides, add new devs
       const mergedDevs = extractedDevs.map((d) => ({
@@ -31,7 +38,9 @@ function reducer(state, action) {
 
       return {
         ...state,
-        tickets,
+        tickets: allTickets,
+        userStories,
+        hierarchy,
         devs: [...mergedDevs, ...manualDevs],
         isLoaded: true,
       };
@@ -65,13 +74,22 @@ function reducer(state, action) {
         devs: state.devs.filter((d) => d.name !== action.payload),
       };
 
-    case 'UPDATE_TICKET':
+    case 'UPDATE_TICKET': {
+      // Update ticket in allTickets
+      const updatedTickets = state.tickets.map((t) =>
+        t.id === action.payload.id ? { ...t, ...action.payload } : t
+      );
+
+      // Rebuild hierarchy with updated data
+      const { allTickets, userStories, hierarchy } = buildHierarchy(updatedTickets);
+
       return {
         ...state,
-        tickets: state.tickets.map((t) =>
-          t.id === action.payload.id ? { ...t, ...action.payload } : t
-        ),
+        tickets: allTickets,
+        userStories,
+        hierarchy,
       };
+    }
 
     case 'RESET':
       return initialState;
@@ -112,13 +130,13 @@ export function SprintProvider({ children }) {
 
   const reset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
-  // Derived data
+  // Derived data - use userStories (aggregated) for all calculations
   const totalCapacity = state.devs.reduce((sum, d) => sum + d.capacity, 0);
-  const totalAssigned = state.tickets.reduce(
+  const totalAssigned = state.userStories.reduce(
     (sum, t) => sum + t.estimateHours,
     0
   );
-  const totalTimeSpent = state.tickets.reduce(
+  const totalTimeSpent = state.userStories.reduce(
     (sum, t) => sum + (t.timeSpentHours || 0),
     0
   );
@@ -135,7 +153,7 @@ export function SprintProvider({ children }) {
     devLoadMap.set(d.name, 0);
     devSpentMap.set(d.name, 0);
   });
-  state.tickets.forEach((t) => {
+  state.userStories.forEach((t) => {
     if (devLoadMap.has(t.assignee)) {
       devLoadMap.set(t.assignee, devLoadMap.get(t.assignee) + t.estimateHours);
       devSpentMap.set(t.assignee, devSpentMap.get(t.assignee) + (t.timeSpentHours || 0));
@@ -171,7 +189,8 @@ export function SprintProvider({ children }) {
   };
 
   // Sort by priority first, then by type hierarchy within the same priority
-  const ticketsByPriority = [...state.tickets].sort((a, b) => {
+  // Use userStories for priority calculations
+  const ticketsByPriority = [...state.userStories].sort((a, b) => {
     const priorityOrder = { Highest: 0, High: 1, Low: 2, Lowest: 3 };
     const pDiff = (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
     if (pDiff !== 0) return pDiff;
@@ -189,7 +208,7 @@ export function SprintProvider({ children }) {
   });
 
   // Low priority ticket count for recommendation
-  const lowPriorityCount = state.tickets.filter(
+  const lowPriorityCount = state.userStories.filter(
     (t) => t.priority === 'Low' || t.priority === 'Lowest'
   ).length;
 
@@ -212,6 +231,10 @@ export function SprintProvider({ children }) {
     atRiskTickets,
     lowPriorityCount,
     ticketsByPriority,
+    // Expose both tickets (for table) and userStories (for charts)
+    allTickets: state.tickets,
+    userStories: state.userStories,
+    hierarchy: state.hierarchy,
   };
 
   return (

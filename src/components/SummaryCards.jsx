@@ -50,7 +50,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'indigo', progress })
 
 export default function SummaryCards() {
   const {
-    tickets,
+    userStories,
     devs,
     totalCapacity,
     totalAssigned,
@@ -62,15 +62,15 @@ export default function SummaryCards() {
     atRiskTickets,
   } = useSprint();
 
-  const highestCount = tickets.filter((t) => t.priority === 'Highest').length;
+  const highestCount = userStories.filter((t) => t.priority === 'Highest').length;
 
   return (
     <div className="grid grid-cols-3 gap-4 lg:gap-5">
       {/* Row 1 */}
       <StatCard
         icon={Target}
-        label="Total Tickets"
-        value={tickets.length}
+        label="User Stories"
+        value={userStories.length}
         sub={`${highestCount} critical priority`}
         color="indigo"
       />
