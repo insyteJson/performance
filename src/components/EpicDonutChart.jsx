@@ -176,7 +176,7 @@ export default function EpicDonutChart() {
             </Pie>
             <Tooltip
               content={<CustomTooltip />}
-              position={{ x: 320, y: 20 }}
+              offset={25}
               wrapperStyle={{ zIndex: 1000 }}
             />
           </PieChart>
