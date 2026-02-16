@@ -44,9 +44,12 @@ function CustomTooltip({ active, payload }) {
     <div className="bg-white shadow-lg rounded-lg border border-slate-200 p-3 text-sm max-w-64">
       <p className="font-semibold text-slate-800">{d.key}</p>
       <p className="text-slate-600 text-xs mb-1">{d.summary}</p>
-      <div className="flex gap-3 mt-1">
+      <div className="flex flex-col gap-0.5 mt-1">
         <span className="text-slate-500">
-          Effort: <span className="font-medium text-slate-700">{d.hours}h</span>
+          Estimate: <span className="font-medium text-slate-700">{d.hours}h</span>
+          {d.spent > 0 && (
+            <span className="text-emerald-600 ml-1">({d.spent}h spent)</span>
+          )}
         </span>
         <span className="text-slate-500">
           Priority: <span className="font-medium text-slate-700">{d.priorityRaw}</span>
@@ -82,18 +85,20 @@ export default function RiskValueChart() {
     );
   }
 
-  const maxHours = Math.max(...tickets.map((t) => t.estimateHours), 12);
+  const maxHours = Math.max(...tickets.map((t) => (t.timeSpentHours || 0) + t.estimateHours), 12);
   const midHours = 6;
 
   const data = tickets.map((t) => {
     const pv = getPriorityValue(t.priority);
+    const totalHours = (t.timeSpentHours || 0) + t.estimateHours;
     return {
       key: t.key || t.id,
       summary: t.summary,
-      hours: t.estimateHours,
+      hours: Math.round(totalHours * 10) / 10,
+      spent: Math.round((t.timeSpentHours || 0) * 10) / 10,
       priorityValue: pv + (Math.random() * 0.3 - 0.15), // jitter to avoid overlap
       priorityRaw: t.priorityRaw || t.priority,
-      quadrant: getQuadrant(t.estimateHours, pv),
+      quadrant: getQuadrant(totalHours, pv),
       z: 80,
     };
   });

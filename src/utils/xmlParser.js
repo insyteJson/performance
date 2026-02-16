@@ -35,19 +35,25 @@ export function parseXML(xmlString) {
     const updated = getText('updated');
     const description = getText('description');
 
-    // Extract time estimate — only use Original Estimate (timeoriginalestimate)
-    // Do NOT fall back to timeestimate (remaining estimate) or aggregate fields,
-    // as Jira can auto-populate those even when no original estimate was set.
+    // Extract time fields from Jira XML
+    // timeestimate = current remaining estimate, timespent = actual logged time
+    const timeestimate = getText('timeestimate');
+    const timespent = getText('timespent');
     const timeoriginalestimate = getText('timeoriginalestimate');
 
     let estimateHours = 0;
-    const rawSeconds = parseInt(timeoriginalestimate) || 0;
-
-    if (rawSeconds > 0) {
-      estimateHours = rawSeconds / 3600;
+    // Prefer timeestimate (remaining), fall back to timeoriginalestimate
+    const rawEstimate = parseInt(timeestimate) || 0;
+    const rawOriginal = parseInt(timeoriginalestimate) || 0;
+    if (rawEstimate > 0) {
+      estimateHours = rawEstimate / 3600;
+    } else if (rawOriginal > 0) {
+      estimateHours = rawOriginal / 3600;
     }
 
-    // If no original estimate, check for explicit story points custom field
+    const timeSpentHours = (parseInt(timespent) || 0) / 3600;
+
+    // If no estimate from time fields, check for explicit story points custom field
     if (estimateHours === 0) {
       const customFields = item.querySelectorAll('customfield');
       customFields.forEach((cf) => {
@@ -115,6 +121,7 @@ export function parseXML(xmlString) {
       updated,
       description,
       estimateHours,
+      timeSpentHours,
       epic: epic || parentKey || '',
       parentKey,
       subtaskKeys,
@@ -182,6 +189,7 @@ export function parseText(text) {
         updated: '',
         description: '',
         estimateHours: parseFloat(hours) || 0,
+        timeSpentHours: 0,
         epic: epic || '',
         parentKey: '',
         subtaskKeys: [],
@@ -204,6 +212,7 @@ export function parseText(text) {
         updated: '',
         description: '',
         estimateHours: 0,
+        timeSpentHours: 0,
         epic: '',
         parentKey: '',
         subtaskKeys: [],

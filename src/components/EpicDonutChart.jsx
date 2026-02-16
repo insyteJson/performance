@@ -14,7 +14,10 @@ function CustomTooltip({ active, payload }) {
         Tickets: <span className="font-medium">{d.count}</span>
       </p>
       <p className="text-slate-600">
-        Hours: <span className="font-medium">{d.hours}h</span>
+        Total: <span className="font-medium">{d.hours}h</span>
+        {d.spent > 0 && (
+          <span className="text-emerald-600 ml-1">({d.spent}h spent)</span>
+        )}
       </p>
       <p className="text-slate-600">
         Share: <span className="font-medium">{d.pct}%</span>
@@ -67,14 +70,13 @@ export default function EpicDonutChart() {
   const customerTickets = tickets.filter((t) => t.isCustomerRequest);
   const internalTickets = tickets.filter((t) => !t.isCustomerRequest);
 
-  const customerHours = customerTickets.reduce(
-    (s, t) => s + t.estimateHours,
-    0
-  );
-  const internalHours = internalTickets.reduce(
-    (s, t) => s + t.estimateHours,
-    0
-  );
+  const getTicketTotal = (t) => (t.timeSpentHours || 0) + t.estimateHours;
+  const getTicketSpent = (t) => t.timeSpentHours || 0;
+
+  const customerHours = customerTickets.reduce((s, t) => s + getTicketTotal(t), 0);
+  const customerSpent = customerTickets.reduce((s, t) => s + getTicketSpent(t), 0);
+  const internalHours = internalTickets.reduce((s, t) => s + getTicketTotal(t), 0);
+  const internalSpent = internalTickets.reduce((s, t) => s + getTicketSpent(t), 0);
   const totalHours = customerHours + internalHours;
 
   const donutData = [
@@ -82,6 +84,7 @@ export default function EpicDonutChart() {
       name: 'Customer Requests',
       count: customerTickets.length,
       hours: Math.round(customerHours * 10) / 10,
+      spent: Math.round(customerSpent * 10) / 10,
       value: customerHours,
       pct: totalHours > 0 ? Math.round((customerHours / totalHours) * 100) : 0,
     },
@@ -89,6 +92,7 @@ export default function EpicDonutChart() {
       name: 'Internal / Other',
       count: internalTickets.length,
       hours: Math.round(internalHours * 10) / 10,
+      spent: Math.round(internalSpent * 10) / 10,
       value: internalHours,
       pct: totalHours > 0 ? Math.round((internalHours / totalHours) * 100) : 0,
     },
@@ -98,10 +102,11 @@ export default function EpicDonutChart() {
   const epicMap = new Map();
   tickets.forEach((t) => {
     const key = t.epic || 'No Epic';
-    if (!epicMap.has(key)) epicMap.set(key, { count: 0, hours: 0 });
+    if (!epicMap.has(key)) epicMap.set(key, { count: 0, hours: 0, spent: 0 });
     const e = epicMap.get(key);
     e.count++;
-    e.hours += t.estimateHours;
+    e.hours += getTicketTotal(t);
+    e.spent += getTicketSpent(t);
   });
 
   const epicData = Array.from(epicMap.entries())
@@ -109,6 +114,7 @@ export default function EpicDonutChart() {
       name,
       count: data.count,
       hours: Math.round(data.hours * 10) / 10,
+      spent: Math.round(data.spent * 10) / 10,
       value: data.hours,
       pct: totalHours > 0 ? Math.round((data.hours / totalHours) * 100) : 0,
     }))

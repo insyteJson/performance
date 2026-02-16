@@ -20,7 +20,10 @@ function CustomTooltip({ active, payload }) {
       <p className="font-semibold text-slate-800">{d.key}</p>
       <p className="text-xs text-slate-500 mb-1">{d.summary}</p>
       <p className="text-slate-600">
-        Hours: <span className="font-medium">{d.hours}h</span>
+        Total: <span className="font-medium">{d.totalHours}h</span>
+        {d.spent > 0 && (
+          <span className="text-slate-400"> ({d.spent}h spent + {d.remaining}h remaining)</span>
+        )}
       </p>
       <p className="text-slate-600">
         Cumulative: <span className="font-medium">{d.cumulative}h</span>
@@ -60,12 +63,17 @@ export default function SprintCutoffChart() {
 
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
-    cumulative += t.estimateHours;
+    const spent = t.timeSpentHours || 0;
+    const remaining = t.estimateHours;
+    const totalHours = spent + remaining;
+    cumulative += totalHours;
     return {
       idx: idx + 1,
       key: t.key || t.id,
       summary: t.summary,
-      hours: t.estimateHours,
+      totalHours: Math.round(totalHours * 10) / 10,
+      spent: Math.round(spent * 10) / 10,
+      remaining: Math.round(remaining * 10) / 10,
       cumulative: Math.round(cumulative * 10) / 10,
       priority: t.priority,
       atRisk: cumulative > totalCapacity,

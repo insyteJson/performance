@@ -56,10 +56,12 @@ export default function DataInput() {
   <summary>Implement user authentication flow</summary>
   <type>Story</type>
   <priority>Highest</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Alice Chen</assignee>
   <reporter>PM Team</reporter>
   <timeoriginalestimate>28800</timeoriginalestimate>
+  <timeestimate>18000</timeestimate>
+  <timespent>10800</timespent>
   <label>customer</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Auth Overhaul</customfieldvalue></customfield>
 </item>
@@ -72,6 +74,8 @@ export default function DataInput() {
   <assignee>Bob Kumar</assignee>
   <reporter>Support</reporter>
   <timeoriginalestimate>21600</timeoriginalestimate>
+  <timeestimate>7200</timeestimate>
+  <timespent>14400</timespent>
   <label>customer-request</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Payments</customfieldvalue></customfield>
 </item>
@@ -80,10 +84,12 @@ export default function DataInput() {
   <summary>Dashboard performance optimization</summary>
   <type>Task</type>
   <priority>High</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Alice Chen</assignee>
   <reporter>Tech Lead</reporter>
   <timeoriginalestimate>36000</timeoriginalestimate>
+  <timeestimate>25200</timeestimate>
+  <timespent>10800</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Performance</customfieldvalue></customfield>
 </item>
 <item>
@@ -95,6 +101,8 @@ export default function DataInput() {
   <assignee>Carol Davis</assignee>
   <reporter>Product</reporter>
   <timeoriginalestimate>14400</timeoriginalestimate>
+  <timeestimate>14400</timeestimate>
+  <timespent>0</timespent>
   <label>client-request</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Reporting</customfieldvalue></customfield>
 </item>
@@ -103,10 +111,12 @@ export default function DataInput() {
   <summary>Refactor notification service</summary>
   <type>Task</type>
   <priority>High</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Bob Kumar</assignee>
   <reporter>Tech Lead</reporter>
   <timeoriginalestimate>28800</timeoriginalestimate>
+  <timeestimate>21600</timeestimate>
+  <timespent>7200</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Notifications</customfieldvalue></customfield>
 </item>
 <item>
@@ -114,10 +124,12 @@ export default function DataInput() {
   <summary>Redesign settings page UI</summary>
   <type>Story</type>
   <priority>High</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Diana Park</assignee>
   <reporter>Design</reporter>
   <timeoriginalestimate>21600</timeoriginalestimate>
+  <timeestimate>14400</timeestimate>
+  <timespent>7200</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>UI Refresh</customfieldvalue></customfield>
 </item>
 <item>
@@ -129,6 +141,8 @@ export default function DataInput() {
   <assignee>Carol Davis</assignee>
   <reporter>Security</reporter>
   <timeoriginalestimate>36000</timeoriginalestimate>
+  <timeestimate>36000</timeestimate>
+  <timespent>0</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Security</customfieldvalue></customfield>
 </item>
 <item>
@@ -140,6 +154,8 @@ export default function DataInput() {
   <assignee>Diana Park</assignee>
   <reporter>Marketing</reporter>
   <timeoriginalestimate>14400</timeoriginalestimate>
+  <timeestimate>14400</timeestimate>
+  <timespent>0</timespent>
   <label>external</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Emails</customfieldvalue></customfield>
 </item>
@@ -148,10 +164,12 @@ export default function DataInput() {
   <summary>Update dependency versions</summary>
   <type>Task</type>
   <priority>Low</priority>
-  <status>Open</status>
+  <status>Resolved</status>
   <assignee>Alice Chen</assignee>
   <reporter>Tech Lead</reporter>
   <timeoriginalestimate>7200</timeoriginalestimate>
+  <timeestimate>0</timeestimate>
+  <timespent>5400</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Maintenance</customfieldvalue></customfield>
 </item>
 <item>
@@ -159,10 +177,12 @@ export default function DataInput() {
   <summary>Write integration tests for checkout</summary>
   <type>Task</type>
   <priority>High</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Bob Kumar</assignee>
   <reporter>QA</reporter>
   <timeoriginalestimate>18000</timeoriginalestimate>
+  <timeestimate>10800</timeestimate>
+  <timespent>7200</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Payments</customfieldvalue></customfield>
 </item>
 <item>
@@ -174,6 +194,8 @@ export default function DataInput() {
   <assignee>Carol Davis</assignee>
   <reporter>Tech Lead</reporter>
   <timeoriginalestimate>14400</timeoriginalestimate>
+  <timeestimate>14400</timeestimate>
+  <timespent>0</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Architecture</customfieldvalue></customfield>
 </item>
 <item>
@@ -185,6 +207,8 @@ export default function DataInput() {
   <assignee>Diana Park</assignee>
   <reporter>Product</reporter>
   <timeoriginalestimate>21600</timeoriginalestimate>
+  <timeestimate>21600</timeestimate>
+  <timespent>0</timespent>
   <label>customer</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>UI Refresh</customfieldvalue></customfield>
 </item>
@@ -197,6 +221,8 @@ export default function DataInput() {
   <assignee>Alice Chen</assignee>
   <reporter>Tech Lead</reporter>
   <timeoriginalestimate>14400</timeoriginalestimate>
+  <timeestimate>14400</timeestimate>
+  <timespent>0</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Integrations</customfieldvalue></customfield>
 </item>
 <item>
@@ -208,6 +234,8 @@ export default function DataInput() {
   <assignee>Bob Kumar</assignee>
   <reporter>Compliance</reporter>
   <timeoriginalestimate>28800</timeoriginalestimate>
+  <timeestimate>28800</timeestimate>
+  <timespent>0</timespent>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Security</customfieldvalue></customfield>
 </item>
 <item>
@@ -215,13 +243,14 @@ export default function DataInput() {
   <summary>Onboarding wizard improvements</summary>
   <type>Story</type>
   <priority>High</priority>
-  <status>Open</status>
+  <status>In Progress</status>
   <assignee>Diana Park</assignee>
   <reporter>Product</reporter>
   <timeoriginalestimate>28800</timeoriginalestimate>
+  <timeestimate>18000</timeestimate>
+  <timespent>10800</timespent>
   <label>customer-request</label>
   <customfield><customfieldname>Epic Link</customfieldname><customfieldvalue>Onboarding</customfieldvalue></customfield>
-</item>
 </item>
 </channel>
 </rss>`;

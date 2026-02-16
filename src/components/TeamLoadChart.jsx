@@ -18,12 +18,19 @@ function CustomTooltip({ active, payload }) {
   const d = payload[0].payload;
   return (
     <div className="bg-white shadow-lg rounded-lg border border-slate-200 p-3 text-sm">
-      <p className="font-semibold text-slate-800">{d.name}</p>
+      <p className="font-semibold text-slate-800">{d.fullName}</p>
+      {d.spent > 0 && (
+        <p className="text-slate-600">
+          Spent: <span className="font-medium text-emerald-600">{Math.round(d.spent * 10) / 10}h</span>
+        </p>
+      )}
       <p className="text-slate-600">
-        Assigned: <span className="font-medium">{d.assigned}h</span>
+        Remaining: <span className="font-medium text-indigo-600">{Math.round(d.remainingEst * 10) / 10}h</span>
       </p>
       <p className="text-slate-600">
-        Capacity: <span className="font-medium">{d.capacity}h</span>
+        Total: <span className="font-medium">{Math.round(d.assigned * 10) / 10}h</span>
+        {' / '}
+        <span className="font-medium">{d.capacity}h capacity</span>
       </p>
       <p
         className={`font-medium ${d.loadPercent > 100 ? 'text-red-600' : 'text-emerald-600'}`}
@@ -55,8 +62,10 @@ export default function TeamLoadChart() {
     name: d.name.split(' ')[0],
     fullName: d.name,
     assigned: d.assigned,
+    spent: d.spent,
+    remainingEst: d.remaining,
     capacity: d.capacity,
-    remaining: Math.max(d.capacity - d.assigned, 0),
+    capacityLeft: Math.max(d.capacity - d.assigned, 0),
     loadPercent: d.loadPercent,
   }));
 
@@ -89,10 +98,19 @@ export default function TeamLoadChart() {
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
           />
           <Bar
-            dataKey="assigned"
-            name="Assigned Hours"
-            radius={[4, 4, 0, 0]}
+            dataKey="spent"
+            name="Time Spent"
+            stackId="work"
+            fill="#10b981"
+            radius={[0, 0, 0, 0]}
             maxBarSize={50}
+          />
+          <Bar
+            dataKey="remainingEst"
+            name="Remaining Estimate"
+            stackId="work"
+            maxBarSize={50}
+            radius={[4, 4, 0, 0]}
           >
             {data.map((entry, idx) => (
               <Cell
@@ -102,8 +120,8 @@ export default function TeamLoadChart() {
             ))}
           </Bar>
           <Bar
-            dataKey="remaining"
-            name="Remaining Capacity"
+            dataKey="capacityLeft"
+            name="Capacity Left"
             fill="#e2e8f0"
             radius={[4, 4, 0, 0]}
             maxBarSize={50}
