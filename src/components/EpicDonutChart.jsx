@@ -183,19 +183,22 @@ export default function EpicDonutChart() {
         </ResponsiveContainer>
 
         {/* Legend */}
-        <div className="flex flex-col gap-2 min-w-44 max-h-[280px] overflow-y-auto">
+        <div className="flex flex-col gap-3 min-w-44 max-h-[280px] overflow-y-auto">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 sticky top-0 bg-white">
             Epics
           </div>
           {epicData.map((d, i) => (
-            <div key={d.name} className="flex items-center gap-2 text-sm">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: COLORS[i % COLORS.length] }}
-              />
-              <span className="text-slate-700 truncate flex-1">{d.name}</span>
-              <span className="text-slate-400 text-xs">{d.count} stories</span>
-              <span className="text-slate-600 font-medium text-xs">{d.hours}h</span>
+            <div key={d.name} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                />
+                <span className="text-slate-700 text-sm font-medium truncate">{d.name}</span>
+              </div>
+              <div className="text-xs text-slate-500 ml-5">
+                {d.count} {d.count === 1 ? 'story' : 'stories'} · {d.hours}h
+              </div>
             </div>
           ))}
         </div>
