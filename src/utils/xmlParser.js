@@ -69,8 +69,10 @@ export function parseXML(xmlString) {
 
     // Leave as 0 if no estimate found — do not invent a default
 
-    // Extract epic / parent
-    const parent = getText('parent');
+    // Extract parent key (for hierarchy detection)
+    const parentKey = getText('parent');
+
+    // Extract epic from custom fields
     let epic = '';
     const customFields = item.querySelectorAll('customfield');
     customFields.forEach((cf) => {
@@ -84,6 +86,14 @@ export function parseXML(xmlString) {
           });
         }
       }
+    });
+
+    // Extract subtask keys (for hierarchy detection from parent side)
+    const subtaskKeys = [];
+    const subtaskEls = item.querySelectorAll('subtask');
+    subtaskEls.forEach((st) => {
+      const stKey = st.textContent.trim();
+      if (stKey) subtaskKeys.push(stKey);
     });
 
     // Extract labels
@@ -105,13 +115,38 @@ export function parseXML(xmlString) {
       updated,
       description,
       estimateHours,
-      epic: epic || parent || '',
+      epic: epic || parentKey || '',
+      parentKey,
+      subtaskKeys,
       labels,
       isCustomerRequest: detectCustomerRequest(labels, summary, type, epic),
     });
   });
 
-  return tickets;
+  // Filter out parent tickets whose children are also in the dataset.
+  // When children exist, the parent is just a container — counting both
+  // would double-count hours and inflate all charts.
+  const allKeys = new Set(tickets.map((t) => t.key).filter(Boolean));
+
+  // Collect keys of tickets that are parents (have children present in dataset)
+  const parentKeysInDataset = new Set();
+
+  tickets.forEach((t) => {
+    // Child references its parent via <parent> tag
+    if (t.parentKey && allKeys.has(t.parentKey)) {
+      parentKeysInDataset.add(t.parentKey);
+    }
+    // Parent lists its children via <subtasks> tag
+    if (t.subtaskKeys.length > 0) {
+      const hasChildInDataset = t.subtaskKeys.some((sk) => allKeys.has(sk));
+      if (hasChildInDataset) {
+        parentKeysInDataset.add(t.key);
+      }
+    }
+  });
+
+  // Return only leaf tickets (not parents with children in the dataset)
+  return tickets.filter((t) => !parentKeysInDataset.has(t.key));
 }
 
 /**
@@ -148,6 +183,8 @@ export function parseText(text) {
         description: '',
         estimateHours: parseFloat(hours) || 0,
         epic: epic || '',
+        parentKey: '',
+        subtaskKeys: [],
         labels: [],
         isCustomerRequest: false,
       });
@@ -168,6 +205,8 @@ export function parseText(text) {
         description: '',
         estimateHours: 0,
         epic: '',
+        parentKey: '',
+        subtaskKeys: [],
         labels: [],
         isCustomerRequest: false,
       });
