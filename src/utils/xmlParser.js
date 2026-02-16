@@ -128,30 +128,8 @@ export function parseXML(xmlString) {
     });
   });
 
-  // Filter out parent tickets whose children are also in the dataset.
-  // When children exist, the parent is just a container — counting both
-  // would double-count hours and inflate all charts.
-  const allKeys = new Set(tickets.map((t) => t.key).filter(Boolean));
-
-  // Collect keys of tickets that are parents (have children present in dataset)
-  const parentKeysInDataset = new Set();
-
-  tickets.forEach((t) => {
-    // Child references its parent via <parent> tag
-    if (t.parentKey && allKeys.has(t.parentKey)) {
-      parentKeysInDataset.add(t.parentKey);
-    }
-    // Parent lists its children via <subtasks> tag
-    if (t.subtaskKeys.length > 0) {
-      const hasChildInDataset = t.subtaskKeys.some((sk) => allKeys.has(sk));
-      if (hasChildInDataset) {
-        parentKeysInDataset.add(t.key);
-      }
-    }
-  });
-
-  // Return only leaf tickets (not parents with children in the dataset)
-  return tickets.filter((t) => !parentKeysInDataset.has(t.key));
+  // Keep all tickets for hierarchy display
+  return tickets;
 }
 
 /**
@@ -303,4 +281,111 @@ export function getPriorityValue(priority) {
     default:
       return 0;
   }
+}
+
+/**
+ * Detect ticket hierarchy level based on type and key format
+ * Epic: name only (never IT-###)
+ * User Story: IT-### format, type contains "story"
+ * Sub Task: IT-### format, has parentKey, type contains "sub"
+ */
+export function getTicketLevel(ticket) {
+  const typeLC = (ticket.type || '').toLowerCase();
+  const hasITKey = /^[A-Z]+-\d+$/.test(ticket.key);
+
+  // Epic: has epic name and is not an IT key, OR type is Epic
+  if (typeLC.includes('epic') || (!hasITKey && ticket.epic)) {
+    return 'epic';
+  }
+
+  // Sub Task: has parent and type indicates subtask
+  if (ticket.parentKey && (typeLC.includes('sub-task') || typeLC.includes('subtask'))) {
+    return 'subtask';
+  }
+
+  // User Story: has IT key and type is story, or has subtasks
+  if (hasITKey && (typeLC.includes('story') || ticket.subtaskKeys.length > 0)) {
+    return 'story';
+  }
+
+  // Default: if has parent, it's a subtask; otherwise it's a story
+  return ticket.parentKey ? 'subtask' : 'story';
+}
+
+/**
+ * Build hierarchy structure and aggregate subtask data to user stories.
+ * Returns object with:
+ * - allTickets: original tickets with hierarchy info
+ * - userStories: aggregated user story data (for charts)
+ * - hierarchy: structured tree of epics > stories > subtasks
+ */
+export function buildHierarchy(tickets) {
+  // Add hierarchy level to each ticket
+  const enrichedTickets = tickets.map(t => ({
+    ...t,
+    level: getTicketLevel(t),
+  }));
+
+  // Create maps for quick lookup
+  const ticketMap = new Map(enrichedTickets.map(t => [t.key, t]));
+  const epicMap = new Map(); // epic name -> tickets
+  const storyMap = new Map(); // story key -> story with subtasks
+
+  // Group tickets by epic
+  enrichedTickets.forEach(t => {
+    const epicName = t.epic || 'No Epic';
+    if (!epicMap.has(epicName)) {
+      epicMap.set(epicName, []);
+    }
+    epicMap.get(epicName).push(t);
+  });
+
+  // Build story map with aggregated subtask data
+  enrichedTickets.forEach(t => {
+    if (t.level === 'story') {
+      const subtasks = t.subtaskKeys
+        .map(sk => ticketMap.get(sk))
+        .filter(Boolean);
+
+      // Aggregate subtask data to the story
+      let aggregatedEstimate = t.estimateHours || 0;
+      let aggregatedSpent = t.timeSpentHours || 0;
+
+      if (subtasks.length > 0) {
+        // If story has subtasks, use aggregated data from subtasks
+        aggregatedEstimate = subtasks.reduce((sum, st) => sum + (st.estimateHours || 0), 0);
+        aggregatedSpent = subtasks.reduce((sum, st) => sum + (st.timeSpentHours || 0), 0);
+      }
+
+      storyMap.set(t.key, {
+        ...t,
+        subtasks,
+        originalEstimateHours: t.estimateHours,
+        originalTimeSpentHours: t.timeSpentHours,
+        estimateHours: aggregatedEstimate,
+        timeSpentHours: aggregatedSpent,
+        hasSubtasks: subtasks.length > 0,
+      });
+    }
+  });
+
+  // Build hierarchy structure
+  const hierarchy = [];
+  epicMap.forEach((epicTickets, epicName) => {
+    const stories = epicTickets.filter(t => t.level === 'story');
+    const epicNode = {
+      name: epicName,
+      stories: stories.map(s => storyMap.get(s.key) || s),
+    };
+    hierarchy.push(epicNode);
+  });
+
+  // Return aggregated user stories for charts (only story-level tickets)
+  const userStories = Array.from(storyMap.values());
+
+  return {
+    allTickets: enrichedTickets,
+    userStories,
+    hierarchy,
+  };
 }

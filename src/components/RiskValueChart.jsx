@@ -69,9 +69,9 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function RiskValueChart() {
-  const { tickets } = useSprint();
+  const { userStories } = useSprint();
 
-  if (tickets.length === 0) {
+  if (userStories.length === 0) {
     return (
       <ChartCard
         title="Risk vs. Value"
@@ -85,10 +85,10 @@ export default function RiskValueChart() {
     );
   }
 
-  const maxHours = Math.max(...tickets.map((t) => (t.timeSpentHours || 0) + t.estimateHours), 12);
+  const maxHours = Math.max(...userStories.map((t) => (t.timeSpentHours || 0) + t.estimateHours), 12);
   const midHours = 6;
 
-  const data = tickets.map((t) => {
+  const data = userStories.map((t) => {
     const pv = getPriorityValue(t.priority);
     const totalHours = (t.timeSpentHours || 0) + t.estimateHours;
     return {

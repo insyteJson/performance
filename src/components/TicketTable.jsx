@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
 import { getPriorityLabel, getPriorityColor } from '../utils/xmlParser';
 
@@ -53,115 +53,114 @@ function ProgressBar({ spent, remaining }) {
   );
 }
 
-const COLUMNS = [
-  { key: 'key', label: 'Key', w: 'w-24' },
-  { key: 'summary', label: 'Summary', w: 'min-w-[200px]' },
-  { key: 'type', label: 'Type', w: 'w-24' },
-  { key: 'priority', label: 'Priority', w: 'w-28' },
-  { key: 'status', label: 'Status', w: 'w-28' },
-  { key: 'assignee', label: 'Assignee', w: 'w-32' },
-  { key: 'epic', label: 'Epic', w: 'w-32' },
-  { key: 'estimateHours', label: 'Remaining', w: 'w-24', numeric: true },
-  { key: 'timeSpentHours', label: 'Spent', w: 'w-20', numeric: true },
-  { key: 'totalHours', label: 'Total', w: 'w-20', numeric: true },
-  { key: 'progress', label: 'Progress', w: 'w-36' },
-];
-
 export default function TicketTable() {
-  const { tickets } = useSprint();
+  const { hierarchy, allTickets } = useSprint();
   const [search, setSearch] = useState('');
-  const [sortCol, setSortCol] = useState('key');
-  const [sortDir, setSortDir] = useState('asc');
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [expandedEpics, setExpandedEpics] = useState(new Set());
+  const [expandedStories, setExpandedStories] = useState(new Set());
 
   const assignees = useMemo(
-    () => [...new Set(tickets.map((t) => t.assignee))].sort(),
-    [tickets]
+    () => [...new Set(allTickets.map((t) => t.assignee))].sort(),
+    [allTickets]
   );
   const priorities = useMemo(
-    () => [...new Set(tickets.map((t) => t.priority))],
-    [tickets]
+    () => [...new Set(allTickets.map((t) => t.priority))],
+    [allTickets]
   );
   const statuses = useMemo(
-    () => [...new Set(tickets.map((t) => t.status))].sort(),
-    [tickets]
+    () => [...new Set(allTickets.map((t) => t.status))].sort(),
+    [allTickets]
   );
 
-  const enriched = useMemo(
-    () =>
-      tickets.map((t) => ({
-        ...t,
-        totalHours: (t.timeSpentHours || 0) + t.estimateHours,
-      })),
-    [tickets]
-  );
-
-  const filtered = useMemo(() => {
-    let result = enriched;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.key.toLowerCase().includes(q) ||
-          t.summary.toLowerCase().includes(q) ||
-          t.epic.toLowerCase().includes(q) ||
-          t.assignee.toLowerCase().includes(q)
-      );
+  // Filter hierarchy based on search and filters
+  const filteredHierarchy = useMemo(() => {
+    if (!search && !filterAssignee && !filterPriority && !filterStatus) {
+      return hierarchy;
     }
-    if (filterAssignee) result = result.filter((t) => t.assignee === filterAssignee);
-    if (filterPriority) result = result.filter((t) => t.priority === filterPriority);
-    if (filterStatus) result = result.filter((t) => t.status === filterStatus);
-    return result;
-  }, [enriched, search, filterAssignee, filterPriority, filterStatus]);
 
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    arr.sort((a, b) => {
-      let aVal = a[sortCol];
-      let bVal = b[sortCol];
+    const q = search.toLowerCase();
 
-      if (sortCol === 'priority') {
-        const order = { Highest: 0, High: 1, Low: 2, Lowest: 3 };
-        aVal = order[aVal] ?? 4;
-        bVal = order[bVal] ?? 4;
+    return hierarchy.map(epic => {
+      const filteredStories = epic.stories.filter(story => {
+        // Check filters
+        if (filterAssignee && story.assignee !== filterAssignee) return false;
+        if (filterPriority && story.priority !== filterPriority) return false;
+        if (filterStatus && story.status !== filterStatus) return false;
+
+        // Check search
+        if (search) {
+          const matches =
+            story.key.toLowerCase().includes(q) ||
+            story.summary.toLowerCase().includes(q) ||
+            story.epic.toLowerCase().includes(q) ||
+            story.assignee.toLowerCase().includes(q) ||
+            (story.subtasks || []).some(st =>
+              st.key.toLowerCase().includes(q) ||
+              st.summary.toLowerCase().includes(q)
+            );
+          if (!matches) return false;
+        }
+
+        return true;
+      });
+
+      return {
+        ...epic,
+        stories: filteredStories,
+      };
+    }).filter(epic => epic.stories.length > 0);
+  }, [hierarchy, search, filterAssignee, filterPriority, filterStatus]);
+
+  const toggleEpic = (epicName) => {
+    setExpandedEpics(prev => {
+      const next = new Set(prev);
+      if (next.has(epicName)) {
+        next.delete(epicName);
+      } else {
+        next.add(epicName);
       }
-
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-      const aStr = String(aVal || '').toLowerCase();
-      const bStr = String(bVal || '').toLowerCase();
-      return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      return next;
     });
-    return arr;
-  }, [filtered, sortCol, sortDir]);
-
-  const handleSort = (col) => {
-    if (sortCol === col) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortCol(col);
-      setSortDir('asc');
-    }
   };
 
-  const SortIcon = ({ col }) => {
-    if (sortCol !== col) return <ArrowUpDown size={12} className="text-slate-300" />;
-    return sortDir === 'asc' ? (
-      <ArrowUp size={12} className="text-indigo-500" />
-    ) : (
-      <ArrowDown size={12} className="text-indigo-500" />
-    );
+  const toggleStory = (storyKey) => {
+    setExpandedStories(prev => {
+      const next = new Set(prev);
+      if (next.has(storyKey)) {
+        next.delete(storyKey);
+      } else {
+        next.add(storyKey);
+      }
+      return next;
+    });
   };
 
-  // Summary row totals
-  const totalEstimate = sorted.reduce((s, t) => s + t.estimateHours, 0);
-  const totalSpent = sorted.reduce((s, t) => s + (t.timeSpentHours || 0), 0);
-  const totalHours = sorted.reduce((s, t) => s + t.totalHours, 0);
+  // Calculate totals from filtered hierarchy
+  const totals = useMemo(() => {
+    let totalEstimate = 0;
+    let totalSpent = 0;
+    let ticketCount = 0;
 
-  if (tickets.length === 0) {
+    filteredHierarchy.forEach(epic => {
+      epic.stories.forEach(story => {
+        totalEstimate += story.estimateHours || 0;
+        totalSpent += story.timeSpentHours || 0;
+        ticketCount++;
+      });
+    });
+
+    return {
+      totalEstimate,
+      totalSpent,
+      totalHours: totalEstimate + totalSpent,
+      ticketCount,
+    };
+  }, [filteredHierarchy]);
+
+  if (hierarchy.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl shadow-sm border border-slate-200">
         <Search size={48} className="text-slate-300 mb-4" />
@@ -181,7 +180,7 @@ export default function TicketTable() {
           <h2 className="text-lg font-semibold text-slate-800">
             All Tickets
             <span className="text-sm font-normal text-slate-400 ml-2">
-              {sorted.length} of {tickets.length}
+              {totals.ticketCount} user stories
             </span>
           </h2>
           <div className="relative">
@@ -244,83 +243,197 @@ export default function TicketTable() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Hierarchy Accordion Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none ${col.w}`}
-                  onClick={() => col.key !== 'progress' && handleSort(col.key)}
-                >
-                  <div className="flex items-center gap-1">
-                    {col.label}
-                    {col.key !== 'progress' && <SortIcon col={col.key} />}
-                  </div>
-                </th>
-              ))}
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-8"></th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Key</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-[200px]">Summary</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Priority</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Assignee</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Remaining</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Spent</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Total</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Progress</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sorted.map((t) => (
-              <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-4 py-3 text-sm font-mono font-medium text-indigo-600">
-                  {t.key}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate" title={t.summary}>
-                  {t.summary}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-600">{t.type}</td>
-                <td className="px-4 py-3">
-                  <PriorityBadge priority={t.priority} />
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getStatusClass(t.status)}`}>
-                    {t.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-600">{t.assignee}</td>
-                <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-[130px]" title={t.epic}>
-                  {t.epic || <span className="text-slate-300">--</span>}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
-                  {t.estimateHours > 0 ? `${Math.round(t.estimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
-                </td>
-                <td className="px-4 py-3 text-sm tabular-nums">
-                  {(t.timeSpentHours || 0) > 0 ? (
-                    <span className="text-emerald-600 font-medium">{Math.round(t.timeSpentHours * 10) / 10}h</span>
-                  ) : (
-                    <span className="text-slate-300">--</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
-                  {t.totalHours > 0 ? `${Math.round(t.totalHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
-                </td>
-                <td className="px-4 py-3">
-                  <ProgressBar spent={t.timeSpentHours || 0} remaining={t.estimateHours} />
-                </td>
-              </tr>
-            ))}
+            {filteredHierarchy.map((epic) => {
+              const isEpicExpanded = expandedEpics.has(epic.name);
+              const epicEstimate = epic.stories.reduce((s, st) => s + (st.estimateHours || 0), 0);
+              const epicSpent = epic.stories.reduce((s, st) => s + (st.timeSpentHours || 0), 0);
+              const epicTotal = epicEstimate + epicSpent;
+
+              return (
+                <EpicSection key={epic.name}>
+                  {/* Epic Row */}
+                  <tr
+                    className="bg-indigo-50/60 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-indigo-100"
+                    onClick={() => toggleEpic(epic.name)}
+                  >
+                    <td className="px-4 py-3">
+                      {isEpicExpanded
+                        ? <ChevronDown size={16} className="text-indigo-500" />
+                        : <ChevronRight size={16} className="text-indigo-400" />
+                      }
+                    </td>
+                    <td colSpan={2} className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-full">EPIC</span>
+                        <span className="text-sm font-semibold text-slate-800">{epic.name}</span>
+                        <span className="text-xs text-slate-400">{epic.stories.length} stories</span>
+                      </div>
+                    </td>
+                    <td colSpan={4}></td>
+                    <td className="px-4 py-3 text-sm text-slate-700 font-semibold tabular-nums">
+                      {epicEstimate > 0 ? `${Math.round(epicEstimate * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-sm tabular-nums">
+                      {epicSpent > 0 ? (
+                        <span className="text-emerald-600 font-semibold">{Math.round(epicSpent * 10) / 10}h</span>
+                      ) : (
+                        <span className="text-slate-300">--</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700 font-semibold tabular-nums">
+                      {epicTotal > 0 ? `${Math.round(epicTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ProgressBar spent={epicSpent} remaining={epicEstimate} />
+                    </td>
+                  </tr>
+
+                  {/* Stories under this epic */}
+                  {isEpicExpanded && epic.stories.map((story) => {
+                    const isStoryExpanded = expandedStories.has(story.key);
+                    const subtasks = story.subtasks || [];
+                    const storyTotal = (story.estimateHours || 0) + (story.timeSpentHours || 0);
+
+                    return (
+                      <StorySection key={story.key}>
+                        {/* Story Row */}
+                        <tr
+                          className={`hover:bg-slate-50/80 transition-colors ${subtasks.length > 0 ? 'cursor-pointer' : ''}`}
+                          onClick={() => subtasks.length > 0 && toggleStory(story.key)}
+                        >
+                          <td className="px-4 py-3 pl-8">
+                            {subtasks.length > 0 && (
+                              isStoryExpanded
+                                ? <ChevronDown size={14} className="text-slate-400" />
+                                : <ChevronRight size={14} className="text-slate-300" />
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono font-medium text-indigo-600">
+                            {story.key}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate" title={story.summary}>
+                            <div className="flex items-center gap-2">
+                              {story.summary}
+                              {subtasks.length > 0 && (
+                                <span className="text-xs text-slate-400 shrink-0">{subtasks.length} subtasks</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600">{story.type}</td>
+                          <td className="px-4 py-3">
+                            <PriorityBadge priority={story.priority} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getStatusClass(story.status)}`}>
+                              {story.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600">{story.assignee}</td>
+                          <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
+                            {(story.estimateHours || 0) > 0 ? `${Math.round(story.estimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                          </td>
+                          <td className="px-4 py-3 text-sm tabular-nums">
+                            {(story.timeSpentHours || 0) > 0 ? (
+                              <span className="text-emerald-600 font-medium">{Math.round(story.timeSpentHours * 10) / 10}h</span>
+                            ) : (
+                              <span className="text-slate-300">--</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
+                            {storyTotal > 0 ? `${Math.round(storyTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <ProgressBar spent={story.timeSpentHours || 0} remaining={story.estimateHours || 0} />
+                          </td>
+                        </tr>
+
+                        {/* Subtask Rows */}
+                        {isStoryExpanded && subtasks.map((st) => {
+                          const stTotal = (st.estimateHours || 0) + (st.timeSpentHours || 0);
+                          return (
+                            <tr key={st.key} className="bg-slate-50/40 hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-2 pl-14"></td>
+                              <td className="px-4 py-2 text-xs font-mono text-slate-400">
+                                {st.key}
+                              </td>
+                              <td className="px-4 py-2 text-xs text-slate-500 max-w-xs truncate" title={st.summary}>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-3 h-px bg-slate-300 shrink-0"></span>
+                                  {st.summary}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2 text-xs text-slate-400">{st.type}</td>
+                              <td className="px-4 py-2">
+                                <PriorityBadge priority={st.priority} />
+                              </td>
+                              <td className="px-4 py-2">
+                                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${getStatusClass(st.status)}`}>
+                                  {st.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-xs text-slate-500">{st.assignee}</td>
+                              <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
+                                {(st.estimateHours || 0) > 0 ? `${Math.round(st.estimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                              </td>
+                              <td className="px-4 py-2 text-xs tabular-nums">
+                                {(st.timeSpentHours || 0) > 0 ? (
+                                  <span className="text-emerald-500">{Math.round(st.timeSpentHours * 10) / 10}h</span>
+                                ) : (
+                                  <span className="text-slate-300">--</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
+                                {stTotal > 0 ? `${Math.round(stTotal * 10) / 10}h` : <span className="text-slate-300">--</span>}
+                              </td>
+                              <td className="px-4 py-2">
+                                <ProgressBar spent={st.timeSpentHours || 0} remaining={st.estimateHours || 0} />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </StorySection>
+                    );
+                  })}
+                </EpicSection>
+              );
+            })}
           </tbody>
           {/* Summary footer */}
           <tfoot>
             <tr className="bg-slate-50 border-t border-slate-200">
               <td colSpan={7} className="px-4 py-3 text-sm font-semibold text-slate-600 text-right">
-                Totals
+                Totals (User Stories)
               </td>
               <td className="px-4 py-3 text-sm font-bold text-slate-800 tabular-nums">
-                {Math.round(totalEstimate * 10) / 10}h
+                {Math.round(totals.totalEstimate * 10) / 10}h
               </td>
               <td className="px-4 py-3 text-sm font-bold text-emerald-600 tabular-nums">
-                {Math.round(totalSpent * 10) / 10}h
+                {Math.round(totals.totalSpent * 10) / 10}h
               </td>
               <td className="px-4 py-3 text-sm font-bold text-slate-800 tabular-nums">
-                {Math.round(totalHours * 10) / 10}h
+                {Math.round(totals.totalHours * 10) / 10}h
               </td>
               <td className="px-4 py-3">
-                <ProgressBar spent={totalSpent} remaining={totalEstimate} />
+                <ProgressBar spent={totals.totalSpent} remaining={totals.totalEstimate} />
               </td>
             </tr>
           </tfoot>
@@ -328,4 +441,13 @@ export default function TicketTable() {
       </div>
     </div>
   );
+}
+
+// Fragment wrappers for grouping rows
+function EpicSection({ children }) {
+  return <>{children}</>;
+}
+
+function StorySection({ children }) {
+  return <>{children}</>;
 }

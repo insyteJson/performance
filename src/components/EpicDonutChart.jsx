@@ -50,9 +50,9 @@ function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, pct, name }) 
 }
 
 export default function EpicDonutChart() {
-  const { tickets } = useSprint();
+  const { userStories } = useSprint();
 
-  if (tickets.length === 0) {
+  if (userStories.length === 0) {
     return (
       <ChartCard
         title="Epic Distribution"
@@ -66,9 +66,9 @@ export default function EpicDonutChart() {
     );
   }
 
-  // Customer vs Internal breakdown
-  const customerTickets = tickets.filter((t) => t.isCustomerRequest);
-  const internalTickets = tickets.filter((t) => !t.isCustomerRequest);
+  // Customer vs Internal breakdown (using aggregated user stories)
+  const customerTickets = userStories.filter((t) => t.isCustomerRequest);
+  const internalTickets = userStories.filter((t) => !t.isCustomerRequest);
 
   const getTicketTotal = (t) => (t.timeSpentHours || 0) + t.estimateHours;
   const getTicketSpent = (t) => t.timeSpentHours || 0;
@@ -98,9 +98,9 @@ export default function EpicDonutChart() {
     },
   ];
 
-  // Also breakdown by epic for the outer ring
+  // Also breakdown by epic for the outer ring (using aggregated user stories)
   const epicMap = new Map();
-  tickets.forEach((t) => {
+  userStories.forEach((t) => {
     const key = t.epic || 'No Epic';
     if (!epicMap.has(key)) epicMap.set(key, { count: 0, hours: 0, spent: 0 });
     const e = epicMap.get(key);
