@@ -46,10 +46,10 @@ function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 flex flex-col max-h-[calc(100vh-7rem)]">
+          <div className="min-w-0">
+            <div className="sticky top-24 flex flex-col max-h-[calc(100vh-7rem)] overflow-hidden">
               {/* Sidebar tab switcher */}
               <div className="flex bg-white rounded-t-xl border border-b-0 border-slate-200 overflow-hidden">
                 <button
@@ -77,14 +77,14 @@ function Dashboard() {
               </div>
 
               {/* Sidebar content — scrollable */}
-              <div className="overflow-y-auto flex-1 min-h-0">
+              <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
                 {sidebarTab === 'import' ? <DataInput /> : <TeamManagement />}
               </div>
             </div>
           </div>
 
           {/* Main Charts Area */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="min-w-0 space-y-6">
             {isLoaded ? (
               <>
                 {/* Summary KPI Cards */}

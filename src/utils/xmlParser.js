@@ -35,36 +35,26 @@ export function parseXML(xmlString) {
     const updated = getText('updated');
     const description = getText('description');
 
-    // Try to extract time estimate from multiple possible fields
+    // Extract time estimate — only use Original Estimate (timeoriginalestimate)
+    // Do NOT fall back to timeestimate (remaining estimate) or aggregate fields,
+    // as Jira can auto-populate those even when no original estimate was set.
     const timeoriginalestimate = getText('timeoriginalestimate');
-    const timeestimate = getText('timeestimate');
-    const aggregatetimeoriginalestimate = getText('aggregatetimeoriginalestimate');
 
-    // Parse seconds to hours
     let estimateHours = 0;
-    const rawSeconds =
-      parseInt(timeoriginalestimate) ||
-      parseInt(timeestimate) ||
-      parseInt(aggregatetimeoriginalestimate) ||
-      0;
+    const rawSeconds = parseInt(timeoriginalestimate) || 0;
 
     if (rawSeconds > 0) {
       estimateHours = rawSeconds / 3600;
     }
 
-    // If no time fields, try to extract from customfields or default
+    // If no original estimate, check for explicit story points custom field
     if (estimateHours === 0) {
-      // Look for story points or custom hour fields
       const customFields = item.querySelectorAll('customfield');
       customFields.forEach((cf) => {
         const cfName = cf.querySelector('customfieldname');
         if (cfName) {
           const name = cfName.textContent.toLowerCase();
-          if (
-            name.includes('story points') ||
-            name.includes('estimate') ||
-            name.includes('hours')
-          ) {
+          if (name.includes('story points')) {
             const vals = cf.querySelectorAll('customfieldvalue');
             vals.forEach((v) => {
               const num = parseFloat(v.textContent);
@@ -77,10 +67,7 @@ export function parseXML(xmlString) {
       });
     }
 
-    // Default estimate if none found
-    if (estimateHours === 0) {
-      estimateHours = 4;
-    }
+    // Leave as 0 if no estimate found — do not invent a default
 
     // Extract epic / parent
     const parent = getText('parent');
@@ -159,7 +146,7 @@ export function parseText(text) {
         created: '',
         updated: '',
         description: '',
-        estimateHours: parseFloat(hours) || 4,
+        estimateHours: parseFloat(hours) || 0,
         epic: epic || '',
         labels: [],
         isCustomerRequest: false,
@@ -179,7 +166,7 @@ export function parseText(text) {
         created: '',
         updated: '',
         description: '',
-        estimateHours: 4,
+        estimateHours: 0,
         epic: '',
         labels: [],
         isCustomerRequest: false,

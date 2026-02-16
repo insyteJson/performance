@@ -48,7 +48,7 @@ export default function SummaryCards() {
   const highestCount = tickets.filter((t) => t.priority === 'Highest').length;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
+    <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-4 lg:gap-5">
       <StatCard
         icon={Target}
         label="Total Tickets"
