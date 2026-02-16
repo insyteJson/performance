@@ -332,8 +332,15 @@ export function buildHierarchy(tickets) {
   const storyMap = new Map(); // story key -> story with subtasks
 
   // Group tickets by epic
+  // Epic names should never be IT-### format - those are story keys
   enrichedTickets.forEach(t => {
-    const epicName = t.epic || 'No Epic';
+    let epicName = t.epic || 'No Epic';
+
+    // If epic looks like a ticket key (IT-###), treat it as "No Epic"
+    if (/^[A-Z]+-\d+$/.test(epicName)) {
+      epicName = 'No Epic';
+    }
+
     if (!epicMap.has(epicName)) {
       epicMap.set(epicName, []);
     }
