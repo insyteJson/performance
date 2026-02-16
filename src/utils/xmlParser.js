@@ -35,9 +35,8 @@ export function parseXML(xmlString) {
     const updated = getText('updated');
     const description = getText('description');
 
-    // Extract time fields from Jira XML.
+    // Extract time fields from Jira XML — only timeestimate and timespent.
     // Values are in the "seconds" attribute (e.g. <timeestimate seconds="1200">20 min</timeestimate>).
-    // Fall back to text content for simpler XML exports that use raw seconds as text.
     const getSeconds = (tag) => {
       const el = item.querySelector(tag);
       if (!el) return 0;
@@ -46,17 +45,10 @@ export function parseXML(xmlString) {
       return parseInt(el.textContent) || 0;
     };
 
-    // Remaining estimate: timeestimate → aggregatetimeremainingestimate → timeoriginalestimate → aggregatetimeoriginalestimate
-    const rawEstimate =
-      getSeconds('timeestimate') ||
-      getSeconds('aggregatetimeremainingestimate') ||
-      getSeconds('timeoriginalestimate') ||
-      getSeconds('aggregatetimeoriginalestimate');
-
+    const rawEstimate = getSeconds('timeestimate');
     let estimateHours = rawEstimate > 0 ? rawEstimate / 3600 : 0;
 
-    // Time spent: timespent → aggregatetimespent
-    const rawSpent = getSeconds('timespent') || getSeconds('aggregatetimespent');
+    const rawSpent = getSeconds('timespent');
     const timeSpentHours = rawSpent > 0 ? rawSpent / 3600 : 0;
 
     // If no estimate from time fields, check for explicit story points custom field
