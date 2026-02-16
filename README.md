@@ -19,7 +19,7 @@ This project is configured for GitHub Pages deployment via GitHub Actions.
 
 ---
 
-## How to Export Specific Tickets from Jira
+## How to export Specific Tickets from Jira
 
 The dashboard accepts Jira XML exports. To get a select number of specific tickets into a single XML file that is import-ready for this tool, follow the steps below.
 
