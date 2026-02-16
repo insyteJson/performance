@@ -1,6 +1,8 @@
-import { BarChart3, LayoutDashboard } from 'lucide-react';
+import { useState } from 'react';
+import { BarChart3, LayoutDashboard, Upload, Users } from 'lucide-react';
 import { SprintProvider, useSprint } from './context/SprintContext';
 import DataInput from './components/DataInput';
+import TeamManagement from './components/TeamManagement';
 import SummaryCards from './components/SummaryCards';
 import CapacityGauges from './components/CapacityGauges';
 import TeamLoadChart from './components/TeamLoadChart';
@@ -10,7 +12,8 @@ import SprintCutoffChart from './components/SprintCutoffChart';
 import ExportPanel from './components/ExportPanel';
 
 function Dashboard() {
-  const { isLoaded } = useSprint();
+  const { isLoaded, devs } = useSprint();
+  const [sidebarTab, setSidebarTab] = useState('import');
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -44,10 +47,39 @@ function Dashboard() {
       {/* Main Content */}
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Data Input */}
+          {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
-              <DataInput />
+            <div className="sticky top-24 flex flex-col max-h-[calc(100vh-7rem)]">
+              {/* Sidebar tab switcher */}
+              <div className="flex bg-white rounded-t-xl border border-b-0 border-slate-200 overflow-hidden">
+                <button
+                  onClick={() => setSidebarTab('import')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                    sidebarTab === 'import'
+                      ? 'text-indigo-600 bg-indigo-50/60 border-b-2 border-indigo-600'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Upload size={15} />
+                  Import
+                </button>
+                <button
+                  onClick={() => setSidebarTab('team')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                    sidebarTab === 'team'
+                      ? 'text-indigo-600 bg-indigo-50/60 border-b-2 border-indigo-600'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Users size={15} />
+                  Team{devs.length > 0 ? ` (${devs.length})` : ''}
+                </button>
+              </div>
+
+              {/* Sidebar content — scrollable */}
+              <div className="overflow-y-auto flex-1 min-h-0">
+                {sidebarTab === 'import' ? <DataInput /> : <TeamManagement />}
+              </div>
             </div>
           </div>
 

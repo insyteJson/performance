@@ -1,26 +1,13 @@
 import { useState, useRef } from 'react';
-import {
-  Upload,
-  FileText,
-  Plus,
-  Trash2,
-  UserPlus,
-  Edit3,
-  Check,
-  X,
-} from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
 import { parseXML, parseText } from '../utils/xmlParser';
 
 export default function DataInput() {
-  const { setTickets, devs, addDev, updateDevCapacity, removeDev, tickets } =
-    useSprint();
+  const { setTickets, tickets } = useSprint();
   const [activeTab, setActiveTab] = useState('xml');
   const [textInput, setTextInput] = useState('');
   const [error, setError] = useState('');
-  const [newDevName, setNewDevName] = useState('');
-  const [editingDev, setEditingDev] = useState(null);
-  const [editCapacity, setEditCapacity] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileUpload = (e) => {
@@ -57,25 +44,6 @@ export default function DataInput() {
       setTickets(parsed);
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  const handleAddDev = () => {
-    if (!newDevName.trim()) return;
-    addDev({ name: newDevName.trim() });
-    setNewDevName('');
-  };
-
-  const startEdit = (dev) => {
-    setEditingDev(dev.name);
-    setEditCapacity(String(dev.capacity));
-  };
-
-  const saveEdit = () => {
-    if (editingDev) {
-      updateDevCapacity(editingDev, parseFloat(editCapacity) || 40);
-      setEditingDev(null);
-      setEditCapacity('');
     }
   };
 
@@ -267,7 +235,7 @@ export default function DataInput() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+    <div className="bg-white rounded-b-xl shadow-sm border border-slate-200">
       {/* Header */}
       <div className="p-6 border-b border-slate-200">
         <h2 className="text-lg font-semibold text-slate-800">Data Input</h2>
@@ -362,90 +330,6 @@ export default function DataInput() {
         )}
       </div>
 
-      {/* DEV Management */}
-      <div className="border-t border-slate-200 p-6">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-          <UserPlus size={16} />
-          Team Members (DEVs)
-        </h3>
-
-        {devs.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {devs.map((dev) => (
-              <div
-                key={dev.name}
-                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-              >
-                <span className="text-sm font-medium text-slate-700">
-                  {dev.name}
-                </span>
-                <div className="flex items-center gap-2">
-                  {editingDev === dev.name ? (
-                    <>
-                      <input
-                        type="number"
-                        value={editCapacity}
-                        onChange={(e) => setEditCapacity(e.target.value)}
-                        className="w-20 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                      />
-                      <span className="text-xs text-slate-500">hrs</span>
-                      <button
-                        onClick={saveEdit}
-                        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        onClick={() => setEditingDev(null)}
-                        className="p-1 text-slate-400 hover:bg-slate-100 rounded"
-                      >
-                        <X size={14} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm text-slate-500">
-                        {dev.capacity}h
-                      </span>
-                      <button
-                        onClick={() => startEdit(dev)}
-                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                      <button
-                        onClick={() => removeDev(dev.name)}
-                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newDevName}
-            onChange={(e) => setNewDevName(e.target.value)}
-            placeholder="Add team member..."
-            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            onKeyDown={(e) => e.key === 'Enter' && handleAddDev()}
-          />
-          <button
-            onClick={handleAddDev}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-1"
-          >
-            <Plus size={16} />
-            Add
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
