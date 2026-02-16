@@ -3,63 +3,39 @@ import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 
 /**
- * Convert all SVG elements within a cloned node to inline <img> tags
- * so html2canvas can render them correctly.
- */
-function inlineSVGs(clonedEl, sourceEl) {
-  const clonedSVGs = clonedEl.querySelectorAll('svg');
-  const sourceSVGs = sourceEl.querySelectorAll('svg');
-
-  clonedSVGs.forEach((svg, i) => {
-    const source = sourceSVGs[i];
-    if (!source) return;
-
-    try {
-      const { width, height } = source.getBoundingClientRect();
-      if (width === 0 || height === 0) return;
-
-      svg.setAttribute('width', width);
-      svg.setAttribute('height', height);
-
-      // Ensure all styles are inlined for proper serialization
-      const svgClone = svg.cloneNode(true);
-      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-      const svgData = new XMLSerializer().serializeToString(svgClone);
-      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-
-      const img = document.createElement('img');
-      img.src = url;
-      img.style.width = `${width}px`;
-      img.style.height = `${height}px`;
-      img.style.display = 'block';
-
-      svg.parentNode.replaceChild(img, svg);
-    } catch (e) {
-      // Skip SVG if conversion fails
-      console.warn('SVG inline failed for element', i, e);
-    }
-  });
-}
-
-/**
  * Export a DOM element to a canvas with proper SVG handling
  */
 async function elementToCanvas(element) {
-  // First, try rendering SVGs to canvas natively
-  const svgs = element.querySelectorAll('svg');
-
+  // Simple approach: let html2canvas handle SVGs directly
   return html2canvas(element, {
     backgroundColor: '#ffffff',
     scale: 2,
     useCORS: true,
-    allowTaint: true,
-    logging: false,
+    allowTaint: false,
+    logging: true,
     imageTimeout: 15000,
-    onclone: (doc, clonedEl) => {
-      // Inline SVGs so html2canvas can render them
-      inlineSVGs(clonedEl, element);
+    foreignObjectRendering: false,
+    // Ensure SVGs have proper dimensions
+    onclone: (clonedDoc, clonedElement) => {
+      const svgs = clonedElement.querySelectorAll('svg');
+      const originalSvgs = element.querySelectorAll('svg');
+
+      svgs.forEach((svg, i) => {
+        const originalSvg = originalSvgs[i];
+        if (!originalSvg) return;
+
+        try {
+          const rect = originalSvg.getBoundingClientRect();
+          if (rect.width && rect.height) {
+            svg.setAttribute('width', Math.ceil(rect.width));
+            svg.setAttribute('height', Math.ceil(rect.height));
+            svg.style.width = `${Math.ceil(rect.width)}px`;
+            svg.style.height = `${Math.ceil(rect.height)}px`;
+          }
+        } catch (e) {
+          console.warn('Failed to set SVG dimensions:', e);
+        }
+      });
     },
   });
 }
