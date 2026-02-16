@@ -174,7 +174,11 @@ export default function EpicDonutChart() {
                 return <Cell key={idx} fill={darker} opacity={0.7} />;
               })}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip
+              content={<CustomTooltip />}
+              position={{ x: 320, y: 20 }}
+              wrapperStyle={{ zIndex: 1000 }}
+            />
           </PieChart>
         </ResponsiveContainer>
 

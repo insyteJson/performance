@@ -86,12 +86,25 @@ function downloadBlob(blob, filename) {
  * Export a single DOM element as a PNG download
  */
 export async function exportChartAsPNG(element, filename = 'chart.png') {
-  const canvas = await elementToCanvas(element);
-  canvas.toBlob((blob) => {
-    if (blob) {
-      downloadBlob(blob, filename);
-    }
-  }, 'image/png');
+  try {
+    const canvas = await elementToCanvas(element);
+
+    // Convert to blob using Promise
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to create blob from canvas'));
+        }
+      }, 'image/png');
+    });
+
+    downloadBlob(blob, filename);
+  } catch (error) {
+    console.error('Failed to export chart as PNG:', error);
+    throw error;
+  }
 }
 
 /**

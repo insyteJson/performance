@@ -1,15 +1,24 @@
-import { useRef } from 'react';
-import { Download } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Download, Loader2 } from 'lucide-react';
 import { exportChartAsPNG } from '../utils/exportUtils';
 
 export default function ChartCard({ title, subtitle, children, chartRef, id }) {
   const internalRef = useRef(null);
   const ref = chartRef || internalRef;
+  const [exporting, setExporting] = useState(false);
 
-  const handleExport = () => {
-    if (ref.current) {
-      const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      exportChartAsPNG(ref.current, `${safeName}.png`);
+  const handleExport = async () => {
+    if (ref.current && !exporting) {
+      setExporting(true);
+      try {
+        const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        await exportChartAsPNG(ref.current, `${safeName}.png`);
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Failed to export chart. Please try again.');
+      } finally {
+        setExporting(false);
+      }
     }
   };
 
@@ -28,10 +37,11 @@ export default function ChartCard({ title, subtitle, children, chartRef, id }) {
         </div>
         <button
           onClick={handleExport}
-          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+          disabled={exporting}
+          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Export as PNG"
         >
-          <Download size={18} />
+          {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
         </button>
       </div>
       {children}

@@ -109,6 +109,7 @@ export default function TeamLoadChart() {
             dataKey="remainingEst"
             name="Remaining Estimate"
             stackId="work"
+            fill="#6366f1"
             maxBarSize={50}
             radius={[4, 4, 0, 0]}
           >
