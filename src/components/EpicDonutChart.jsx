@@ -101,7 +101,13 @@ export default function EpicDonutChart() {
   // Also breakdown by epic for the outer ring (using aggregated user stories)
   const epicMap = new Map();
   userStories.forEach((t) => {
-    const key = t.epic || 'No Epic';
+    let key = t.epic || 'No Epic';
+
+    // If epic looks like a ticket key (IT-###), treat it as "No Epic"
+    if (/^[A-Z]+-\d+$/.test(key)) {
+      key = 'No Epic';
+    }
+
     if (!epicMap.has(key)) epicMap.set(key, { count: 0, hours: 0, spent: 0 });
     const e = epicMap.get(key);
     e.count++;
