@@ -57,8 +57,31 @@ function ProgressBar({ spent, remaining }) {
   );
 }
 
+function AssigneeSelect({ value, onChange, assignees, size = 'normal' }) {
+  const sizeClasses = size === 'small'
+    ? 'text-xs px-1 py-0.5'
+    : 'text-sm px-1.5 py-0.5';
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => {
+        e.stopPropagation();
+        onChange(e.target.value);
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className={`${sizeClasses} border border-slate-200 rounded text-slate-600 bg-white hover:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-full max-w-[130px] cursor-pointer`}
+    >
+      <option value="Unassigned">Unassigned</option>
+      {assignees.filter((a) => a !== 'Unassigned').map((a) => (
+        <option key={a} value={a}>{a}</option>
+      ))}
+    </select>
+  );
+}
+
 export default function TicketTable() {
-  const { hierarchy, allTickets } = useSprint();
+  const { hierarchy, allTickets, updateTicketAssignee } = useSprint();
   const [search, setSearch] = useState('');
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
@@ -351,7 +374,13 @@ export default function TicketTable() {
                               {story.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">{story.assignee}</td>
+                          <td className="px-4 py-3">
+                            <AssigneeSelect
+                              value={story.assignee}
+                              onChange={(newAssignee) => updateTicketAssignee(story.id, newAssignee)}
+                              assignees={assignees}
+                            />
+                          </td>
                           <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
                             {(story.originalEstimateHours || 0) > 0 ? `${Math.round(story.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                           </td>
@@ -395,7 +424,14 @@ export default function TicketTable() {
                                   {st.status}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-xs text-slate-500">{st.assignee}</td>
+                              <td className="px-4 py-2">
+                                <AssigneeSelect
+                                  value={st.assignee}
+                                  onChange={(newAssignee) => updateTicketAssignee(st.id, newAssignee)}
+                                  assignees={assignees}
+                                  size="small"
+                                />
+                              </td>
                               <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
                                 {(st.originalEstimateHours || 0) > 0 ? `${Math.round(st.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                               </td>
