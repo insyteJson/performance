@@ -43,7 +43,7 @@ function ProgressBar({ spent, remaining }) {
   const isOverBudget = spent > remaining || pct > 100;
 
   return (
-    <div className="flex items-center gap-1.5 min-w-[80px]">
+    <div className="flex items-center gap-2 min-w-[100px]">
       <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}
@@ -249,19 +249,19 @@ export default function TicketTable() {
 
       {/* Hierarchy Accordion Table */}
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed">
+        <table className="w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-8"></th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Key</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Summary</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Priority</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Assignee</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Original Est.</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Spent</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-20">Remaining</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Progress</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12"></th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Key</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-[300px]">Summary</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Priority</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Status</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Assignee</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28 text-right">Original Est.</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 text-right">Spent</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 text-right">Remaining</th>
+              <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Progress</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -278,36 +278,36 @@ export default function TicketTable() {
                     className="bg-indigo-50/60 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-indigo-100"
                     onClick={() => toggleEpic(epic.name)}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       {isEpicExpanded
                         ? <ChevronDown size={16} className="text-indigo-500" />
                         : <ChevronRight size={16} className="text-indigo-400" />
                       }
                     </td>
-                    <td colSpan={2} className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-full">EPIC</span>
+                    <td colSpan={2} className="px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-semibold text-indigo-500 bg-indigo-100 px-2.5 py-1 rounded-full">EPIC</span>
                         <span className="text-sm font-semibold text-slate-800">{epic.name}</span>
-                        <span className="text-xs text-slate-400">{epic.stories.length} stories</span>
+                        <span className="text-xs text-slate-400 ml-1">{epic.stories.length} stories</span>
                       </div>
                     </td>
                     <td colSpan={3}></td>
-                    <td className="px-4 py-3 text-sm text-slate-700 font-semibold tabular-nums">
+                    <td className="px-5 py-3.5 text-sm text-slate-700 font-semibold tabular-nums text-right">
                       {epicOriginalEstimate > 0 ? `${Math.round(epicOriginalEstimate * 10) / 10}h` : <span className="text-slate-300">--</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm tabular-nums">
+                    <td className="px-5 py-3.5 text-sm tabular-nums text-right">
                       {epicSpent > 0 ? (
                         <span className="text-emerald-600 font-semibold">{Math.round(epicSpent * 10) / 10}h</span>
                       ) : (
                         <span className="text-slate-300">--</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold tabular-nums">
+                    <td className="px-5 py-3.5 text-sm font-semibold tabular-nums text-right">
                       <span className={epicRemaining < 0 ? 'text-red-600' : 'text-slate-700'}>
                         {Math.round(epicRemaining * 10) / 10}h
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       <ProgressBar spent={epicSpent} remaining={epicOriginalEstimate} />
                     </td>
                   </tr>
@@ -325,49 +325,49 @@ export default function TicketTable() {
                           className={`hover:bg-slate-50/80 transition-colors ${subtasks.length > 0 ? 'cursor-pointer' : ''}`}
                           onClick={() => subtasks.length > 0 && toggleStory(story.key)}
                         >
-                          <td className="px-4 py-3 pl-8">
+                          <td className="px-5 py-3.5 pl-10">
                             {subtasks.length > 0 && (
                               isStoryExpanded
                                 ? <ChevronDown size={14} className="text-slate-400" />
                                 : <ChevronRight size={14} className="text-slate-300" />
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm font-mono font-medium text-indigo-600">
+                          <td className="px-5 py-3.5 text-sm font-mono font-medium text-indigo-600">
                             {story.key}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700" title={story.summary}>
-                            <div className="flex items-center gap-2 min-w-0 whitespace-nowrap overflow-hidden">
-                              <span className="truncate">{story.summary}</span>
+                          <td className="px-5 py-3.5 text-sm text-slate-700" title={story.summary}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="break-words">{story.summary}</span>
                               {subtasks.length > 0 && (
-                                <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">{subtasks.length} subtasks</span>
+                                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">{subtasks.length} subtasks</span>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-5 py-3.5">
                             <PriorityBadge priority={story.priority} />
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusClass(story.status)}`}>
+                          <td className="px-5 py-3.5">
+                            <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${getStatusClass(story.status)}`}>
                               {story.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">{story.assignee}</td>
-                          <td className="px-4 py-3 text-sm text-slate-700 font-medium tabular-nums">
+                          <td className="px-5 py-3.5 text-sm text-slate-600">{story.assignee}</td>
+                          <td className="px-5 py-3.5 text-sm text-slate-700 font-medium tabular-nums text-right">
                             {(story.originalEstimateHours || 0) > 0 ? `${Math.round(story.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                           </td>
-                          <td className="px-4 py-3 text-sm tabular-nums">
+                          <td className="px-5 py-3.5 text-sm tabular-nums text-right">
                             {(story.timeSpentHours || 0) > 0 ? (
                               <span className="text-emerald-600 font-medium">{Math.round(story.timeSpentHours * 10) / 10}h</span>
                             ) : (
                               <span className="text-slate-300">--</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium tabular-nums">
+                          <td className="px-5 py-3.5 text-sm font-medium tabular-nums text-right">
                             <span className={storyRemaining < 0 ? 'text-red-600' : 'text-slate-700'}>
                               {Math.round(storyRemaining * 10) / 10}h
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-5 py-3.5">
                             <ProgressBar spent={story.timeSpentHours || 0} remaining={story.originalEstimateHours || 0} />
                           </td>
                         </tr>
@@ -377,41 +377,41 @@ export default function TicketTable() {
                           const stRemaining = (st.originalEstimateHours || 0) - (st.timeSpentHours || 0);
                           return (
                             <tr key={st.key} className="bg-slate-50/40 hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-2 pl-14"></td>
-                              <td className="px-4 py-2 text-xs font-mono text-slate-400">
+                              <td className="px-5 py-3 pl-16"></td>
+                              <td className="px-5 py-3 text-xs font-mono text-slate-400">
                                 {st.key}
                               </td>
-                              <td className="px-4 py-2 text-xs text-slate-500" title={st.summary}>
-                                <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                              <td className="px-5 py-3 text-xs text-slate-500" title={st.summary}>
+                                <div className="flex items-center gap-2">
                                   <span className="w-3 h-px bg-slate-300 shrink-0"></span>
-                                  <span className="truncate">{st.summary}</span>
+                                  <span className="line-clamp-1">{st.summary}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-2">
+                              <td className="px-5 py-3">
                                 <PriorityBadge priority={st.priority} />
                               </td>
-                              <td className="px-4 py-2">
-                                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${getStatusClass(st.status)}`}>
+                              <td className="px-5 py-3">
+                                <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${getStatusClass(st.status)}`}>
                                   {st.status}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-xs text-slate-500">{st.assignee}</td>
-                              <td className="px-4 py-2 text-xs text-slate-500 tabular-nums">
+                              <td className="px-5 py-3 text-xs text-slate-500">{st.assignee}</td>
+                              <td className="px-5 py-3 text-xs text-slate-500 tabular-nums text-right">
                                 {(st.originalEstimateHours || 0) > 0 ? `${Math.round(st.originalEstimateHours * 10) / 10}h` : <span className="text-slate-300">--</span>}
                               </td>
-                              <td className="px-4 py-2 text-xs tabular-nums">
+                              <td className="px-5 py-3 text-xs tabular-nums text-right">
                                 {(st.timeSpentHours || 0) > 0 ? (
                                   <span className="text-emerald-500">{Math.round(st.timeSpentHours * 10) / 10}h</span>
                                 ) : (
                                   <span className="text-slate-300">--</span>
                                 )}
                               </td>
-                              <td className="px-4 py-2 text-xs tabular-nums">
+                              <td className="px-5 py-3 text-xs tabular-nums text-right">
                                 <span className={stRemaining < 0 ? 'text-red-600' : 'text-slate-500'}>
                                   {Math.round(stRemaining * 10) / 10}h
                                 </span>
                               </td>
-                              <td className="px-4 py-2">
+                              <td className="px-5 py-3">
                                 <ProgressBar spent={st.timeSpentHours || 0} remaining={st.originalEstimateHours || 0} />
                               </td>
                             </tr>
@@ -426,22 +426,22 @@ export default function TicketTable() {
           </tbody>
           {/* Summary footer */}
           <tfoot>
-            <tr className="bg-slate-50 border-t border-slate-200">
-              <td colSpan={6} className="px-4 py-3 text-sm font-semibold text-slate-600 text-right">
+            <tr className="bg-slate-50 border-t-2 border-slate-200">
+              <td colSpan={6} className="px-5 py-4 text-sm font-semibold text-slate-600 text-right">
                 Totals (User Stories)
               </td>
-              <td className="px-4 py-3 text-sm font-bold text-slate-800 tabular-nums">
+              <td className="px-5 py-4 text-sm font-bold text-slate-800 tabular-nums text-right">
                 {Math.round(totals.totalEstimate * 10) / 10}h
               </td>
-              <td className="px-4 py-3 text-sm font-bold text-emerald-600 tabular-nums">
+              <td className="px-5 py-4 text-sm font-bold text-emerald-600 tabular-nums text-right">
                 {Math.round(totals.totalSpent * 10) / 10}h
               </td>
-              <td className="px-4 py-3 text-sm font-bold tabular-nums">
+              <td className="px-5 py-4 text-sm font-bold tabular-nums text-right">
                 <span className={(totals.totalEstimate - totals.totalSpent) < 0 ? 'text-red-600' : 'text-slate-800'}>
                   {Math.round((totals.totalEstimate - totals.totalSpent) * 10) / 10}h
                 </span>
               </td>
-              <td className="px-4 py-3">
+              <td className="px-5 py-4">
                 <ProgressBar spent={totals.totalSpent} remaining={totals.totalEstimate} />
               </td>
             </tr>
