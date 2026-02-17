@@ -1,44 +1,12 @@
-import html2canvas from 'html2canvas';
+import { toBlob, toCanvas } from 'html-to-image';
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 
-/**
- * Export a DOM element to a canvas with proper SVG handling
- */
-async function elementToCanvas(element) {
-  // Simple approach: let html2canvas handle SVGs directly
-  return html2canvas(element, {
-    backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
-    logging: true,
-    imageTimeout: 15000,
-    foreignObjectRendering: false,
-    // Ensure SVGs have proper dimensions
-    onclone: (clonedDoc, clonedElement) => {
-      const svgs = clonedElement.querySelectorAll('svg');
-      const originalSvgs = element.querySelectorAll('svg');
-
-      svgs.forEach((svg, i) => {
-        const originalSvg = originalSvgs[i];
-        if (!originalSvg) return;
-
-        try {
-          const rect = originalSvg.getBoundingClientRect();
-          if (rect.width && rect.height) {
-            svg.setAttribute('width', Math.ceil(rect.width));
-            svg.setAttribute('height', Math.ceil(rect.height));
-            svg.style.width = `${Math.ceil(rect.width)}px`;
-            svg.style.height = `${Math.ceil(rect.height)}px`;
-          }
-        } catch (e) {
-          console.warn('Failed to set SVG dimensions:', e);
-        }
-      });
-    },
-  });
-}
+const IMAGE_OPTIONS = {
+  backgroundColor: '#ffffff',
+  pixelRatio: 2,
+  cacheBust: true,
+};
 
 /**
  * Trigger a file download from a blob
@@ -63,19 +31,8 @@ function downloadBlob(blob, filename) {
  */
 export async function exportChartAsPNG(element, filename = 'chart.png') {
   try {
-    const canvas = await elementToCanvas(element);
-
-    // Convert to blob using Promise
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create blob from canvas'));
-        }
-      }, 'image/png');
-    });
-
+    const blob = await toBlob(element, IMAGE_OPTIONS);
+    if (!blob) throw new Error('Failed to create image blob');
     downloadBlob(blob, filename);
   } catch (error) {
     console.error('Failed to export chart as PNG:', error);
@@ -122,7 +79,7 @@ export async function exportAllAsPDF(chartElements, summaryText) {
     if (!el) continue;
 
     try {
-      const canvas = await elementToCanvas(el);
+      const canvas = await toCanvas(el, IMAGE_OPTIONS);
       const imgData = canvas.toDataURL('image/png');
 
       const imgWidth = usableWidth;
@@ -158,7 +115,7 @@ export async function exportAllAsZIP(chartElements, chartNames) {
     if (!el) continue;
 
     try {
-      const canvas = await elementToCanvas(el);
+      const canvas = await toCanvas(el, IMAGE_OPTIONS);
       const dataUrl = canvas.toDataURL('image/png');
       const base64 = dataUrl.split(',')[1];
       const name = chartNames[i] || `chart-${i + 1}`;
