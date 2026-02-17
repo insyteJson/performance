@@ -19,9 +19,9 @@ function reducer(state, action) {
       // Build hierarchy and get aggregated user stories
       const { allTickets, userStories, hierarchy } = buildHierarchy(rawTickets);
 
-      // Extract assignees from user stories (aggregated data)
+      // Extract assignees from all tickets (including subtasks for accurate dev tracking)
       const existingDevMap = new Map(state.devs.map((d) => [d.name, d]));
-      const extractedDevs = extractAssignees(userStories);
+      const extractedDevs = extractAssignees(allTickets);
 
       // Merge: keep existing capacity overrides, add new devs
       const mergedDevs = extractedDevs.map((d) => ({
@@ -91,6 +91,40 @@ function reducer(state, action) {
       };
     }
 
+    case 'UPDATE_TICKET_ASSIGNEE': {
+      const { ticketId, newAssignee } = action.payload;
+
+      // Update assignee on the raw ticket
+      const updatedTickets = state.tickets.map((t) =>
+        t.id === ticketId ? { ...t, assignee: newAssignee } : t
+      );
+
+      // Rebuild hierarchy with updated data
+      const { allTickets: updAllTickets, userStories: updUserStories, hierarchy: updHierarchy } =
+        buildHierarchy(updatedTickets);
+
+      // Re-extract assignees to include any new assignee
+      const existingDevMap = new Map(state.devs.map((d) => [d.name, d]));
+      const extractedDevs = extractAssignees(updAllTickets);
+      const mergedDevs = extractedDevs.map((d) => ({
+        ...d,
+        capacity: existingDevMap.has(d.name)
+          ? existingDevMap.get(d.name).capacity
+          : 40,
+      }));
+      const manualDevs = state.devs.filter(
+        (d) => d.manual && !extractedDevs.find((ed) => ed.name === d.name)
+      );
+
+      return {
+        ...state,
+        tickets: updAllTickets,
+        userStories: updUserStories,
+        hierarchy: updHierarchy,
+        devs: [...mergedDevs, ...manualDevs],
+      };
+    }
+
     case 'RESET':
       return initialState;
 
@@ -128,6 +162,12 @@ export function SprintProvider({ children }) {
     []
   );
 
+  const updateTicketAssignee = useCallback(
+    (ticketId, newAssignee) =>
+      dispatch({ type: 'UPDATE_TICKET_ASSIGNEE', payload: { ticketId, newAssignee } }),
+    []
+  );
+
   const reset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
   // Derived data - use userStories (aggregated) for all calculations
@@ -153,10 +193,22 @@ export function SprintProvider({ children }) {
     devLoadMap.set(d.name, 0);
     devSpentMap.set(d.name, 0);
   });
-  state.userStories.forEach((t) => {
-    if (devLoadMap.has(t.assignee)) {
-      devLoadMap.set(t.assignee, devLoadMap.get(t.assignee) + t.estimateHours);
-      devSpentMap.set(t.assignee, devSpentMap.get(t.assignee) + (t.timeSpentHours || 0));
+  // Use subtask-level data for capacity attribution when subtasks exist.
+  // This ensures that if multiple devs share work on a user story via subtasks,
+  // each dev's capacity reflects their actual subtask assignments.
+  state.userStories.forEach((story) => {
+    if (story.hasSubtasks && story.subtasks && story.subtasks.length > 0) {
+      story.subtasks.forEach((subtask) => {
+        if (devLoadMap.has(subtask.assignee)) {
+          devLoadMap.set(subtask.assignee, devLoadMap.get(subtask.assignee) + (subtask.estimateHours || 0));
+          devSpentMap.set(subtask.assignee, devSpentMap.get(subtask.assignee) + (subtask.timeSpentHours || 0));
+        }
+      });
+    } else {
+      if (devLoadMap.has(story.assignee)) {
+        devLoadMap.set(story.assignee, devLoadMap.get(story.assignee) + story.estimateHours);
+        devSpentMap.set(story.assignee, devSpentMap.get(story.assignee) + (story.timeSpentHours || 0));
+      }
     }
   });
 
@@ -219,6 +271,7 @@ export function SprintProvider({ children }) {
     updateDevCapacity,
     removeDev,
     updateTicket,
+    updateTicketAssignee,
     reset,
     totalCapacity,
     totalAssigned,
