@@ -1,41 +1,11 @@
-import { useState } from 'react';
-import {
-  UserPlus,
-  Trash2,
-  Edit3,
-  Check,
-  X,
-  Users,
-  Clock,
-} from 'lucide-react';
+import { Users, Clock, ArrowRight } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
+import { GaugeRing } from './CapacityGauges';
 
-export default function TeamManagement() {
-  const { devs, addDev, updateDevCapacity, removeDev } = useSprint();
-  const [newDevName, setNewDevName] = useState('');
-  const [editingDev, setEditingDev] = useState(null);
-  const [editCapacity, setEditCapacity] = useState('');
+export default function TeamManagement({ onNavigateToTeam }) {
+  const { devs, devLoads, totalCapacity } = useSprint();
 
-  const handleAddDev = () => {
-    if (!newDevName.trim()) return;
-    addDev({ name: newDevName.trim() });
-    setNewDevName('');
-  };
-
-  const startEdit = (dev) => {
-    setEditingDev(dev.name);
-    setEditCapacity(String(dev.capacity));
-  };
-
-  const saveEdit = () => {
-    if (editingDev) {
-      updateDevCapacity(editingDev, parseFloat(editCapacity) || 40);
-      setEditingDev(null);
-      setEditCapacity('');
-    }
-  };
-
-  const totalCapacity = devs.reduce((sum, d) => sum + d.capacity, 0);
+  const devLoadMap = new Map(devLoads.map((d) => [d.name, d]));
 
   return (
     <div className="bg-white rounded-b-xl shadow-sm border border-slate-200">
@@ -46,7 +16,7 @@ export default function TeamManagement() {
           Team Members
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Manage your team and set available hours per sprint for each member
+          Overview of your team and sprint capacity
         </p>
       </div>
 
@@ -78,119 +48,79 @@ export default function TeamManagement() {
         </div>
       )}
 
-      {/* Dev list */}
+      {/* Dev list (read-only) */}
       <div className="p-6">
         {devs.length > 0 ? (
-          <div className="space-y-3 mb-6">
-            {devs.map((dev) => (
-              <div
-                key={dev.name}
-                className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-indigo-200 transition-all group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-md">
+          <div className="space-y-2">
+            {devs.map((dev) => {
+              const load = devLoadMap.get(dev.name);
+              const loadPercent = load?.loadPercent ?? 0;
+              const isOver = loadPercent > 100;
+
+              return (
+                <div
+                  key={dev.name}
+                  className={`flex items-center gap-3 p-3 border rounded-xl ${
+                    isOver
+                      ? 'border-red-200 bg-red-50/30'
+                      : 'border-slate-200 bg-white'
+                  }`}
+                >
+                  {/* Mini gauge */}
+                  <div className="relative shrink-0">
+                    <GaugeRing percent={loadPercent} size={40} strokeWidth={4} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span
+                        className={`text-[10px] font-bold ${
+                          isOver ? 'text-red-600' : 'text-slate-700'
+                        }`}
+                      >
+                        {loadPercent}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
                     {dev.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
+                  <div className="flex-1 min-w-0">
                     <span className="text-sm font-semibold text-slate-800 block truncate">
                       {dev.name}
                     </span>
-                    {!editingDev || editingDev !== dev.name ? (
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
-                        <Clock size={12} />
-                        {dev.capacity}h per sprint
-                      </span>
-                    ) : null}
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Clock size={11} />
+                      {dev.capacity}h per sprint
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {editingDev === dev.name ? (
-                    <>
-                      <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2 py-1 border border-slate-200">
-                        <input
-                          type="number"
-                          value={editCapacity}
-                          onChange={(e) => setEditCapacity(e.target.value)}
-                          className="w-16 px-1 text-sm bg-transparent focus:outline-none"
-                          onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                          autoFocus
-                        />
-                        <span className="text-xs text-slate-400">h</span>
-                      </div>
-                      <button
-                        onClick={saveEdit}
-                        className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-colors"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        onClick={() => setEditingDev(null)}
-                        className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => startEdit(dev)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                        title="Edit hours per sprint"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        onClick={() => removeDev(dev.name)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                        title="Remove team member"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </>
+                  {isOver && (
+                    <span className="text-[10px] font-medium text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full shrink-0">
+                      OVER
+                    </span>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-12 mb-6">
+          <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
               <Users size={32} className="text-indigo-500" />
             </div>
             <h3 className="text-base font-semibold text-slate-700 mb-1">No team members yet</h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Import tickets to auto-detect assignees, or add members manually below
+              Import tickets to auto-detect assignees, or manage your team on the Team page.
             </p>
           </div>
         )}
 
-        {/* Add new dev */}
-        <div className="border-t border-slate-200 pt-6">
-          <div className="flex gap-3 min-w-0">
-            <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={newDevName}
-                onChange={(e) => setNewDevName(e.target.value)}
-                placeholder="Enter team member name..."
-                className="w-full px-4 py-3 text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddDev()}
-              />
-            </div>
-            <button
-              onClick={handleAddDev}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 shrink-0"
-            >
-              <UserPlus size={18} />
-              <span>Add Member</span>
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-500 mt-3 flex items-start gap-1.5">
-            <span className="text-indigo-500 font-semibold">💡</span>
-            <span>Default capacity is 40h/sprint. Hover over team members to edit or remove them.</span>
-          </p>
-        </div>
+        {/* Link to full Team page */}
+        <button
+          onClick={onNavigateToTeam}
+          className="mt-5 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-700 rounded-xl text-sm font-semibold hover:from-indigo-100 hover:to-purple-100 transition-all"
+        >
+          Manage Team Members
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );
