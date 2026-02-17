@@ -11,6 +11,7 @@ import EpicDonutChart from './components/EpicDonutChart';
 import SprintCutoffChart from './components/SprintCutoffChart';
 import ExportPanel from './components/ExportPanel';
 import TicketTable from './components/TicketTable';
+import TeamPage from './components/TeamPage';
 
 function Dashboard() {
   const { isLoaded, devs, userStories } = useSprint();
@@ -36,19 +37,19 @@ function Dashboard() {
                 </p>
               </div>
             </div>
-            {isLoaded && (
-              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setView('dashboard')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    view === 'dashboard'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <LayoutDashboard size={15} />
-                  Dashboard
-                </button>
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+              <button
+                onClick={() => setView('dashboard')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  view === 'dashboard'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <LayoutDashboard size={15} />
+                Dashboard
+              </button>
+              {isLoaded && (
                 <button
                   onClick={() => setView('tickets')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -65,15 +66,34 @@ function Dashboard() {
                     </span>
                   )}
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => setView('team')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  view === 'team'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Users size={15} />
+                Team
+                {devs.length > 0 && (
+                  <span className="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">
+                    {devs.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {view === 'tickets' && isLoaded ? (
+        {view === 'team' ? (
+          /* Full-width Team page */
+          <TeamPage />
+        ) : view === 'tickets' && isLoaded ? (
           /* Full-width Ticket Table view */
           <TicketTable />
         ) : (
@@ -109,7 +129,7 @@ function Dashboard() {
 
                 {/* Sidebar content — scrollable */}
                 <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
-                  {sidebarTab === 'import' ? <DataInput /> : <TeamManagement />}
+                  {sidebarTab === 'import' ? <DataInput /> : <TeamManagement onNavigateToTeam={() => setView('team')} />}
                 </div>
               </div>
             </div>

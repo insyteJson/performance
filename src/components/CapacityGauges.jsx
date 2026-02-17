@@ -1,7 +1,7 @@
 import { useSprint } from '../context/SprintContext';
 import ChartCard from './ChartCard';
 
-function GaugeRing({ percent, size = 120, strokeWidth = 10 }) {
+export function GaugeRing({ percent, size = 120, strokeWidth = 10 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (Math.min(percent, 150) / 150) * circumference;
