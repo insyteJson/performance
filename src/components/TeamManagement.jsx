@@ -23,9 +23,9 @@ export default function TeamManagement({ onNavigateToTeam }) {
       {/* Summary bar */}
       {devs.length > 0 && (
         <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-slate-200">
-          <div className="flex items-center justify-between">
+          <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg shadow-sm">
+              <div className="p-2 bg-white rounded-lg shadow-sm shrink-0">
                 <Users size={16} className="text-indigo-600" />
               </div>
               <div>
@@ -36,10 +36,10 @@ export default function TeamManagement({ onNavigateToTeam }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg shadow-sm">
+              <div className="p-2 bg-white rounded-lg shadow-sm shrink-0">
                 <Clock size={16} className="text-purple-600" />
               </div>
-              <div className="text-right">
+              <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Sprint Capacity</p>
                 <p className="text-lg font-bold text-slate-800">{totalCapacity}h</p>
               </div>
