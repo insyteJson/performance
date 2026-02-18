@@ -22,9 +22,9 @@ function CustomTooltip({ active, payload }) {
       <p className="font-semibold text-slate-800">{d.key}</p>
       <p className="text-xs text-slate-500 mb-1">{d.summary}</p>
       <p className="text-slate-600">
-        {d.isRemaining ? 'Remaining' : 'Total'}: <span className="font-medium">{d.totalHours}h</span>
+        {d.isRemaining ? 'Remaining' : 'Original Estimate'}: <span className="font-medium">{d.totalHours}h</span>
         {!d.isRemaining && d.spent > 0 && (
-          <span className="text-slate-400"> ({d.spent}h spent + {d.remaining}h remaining)</span>
+          <span className="text-slate-400"> ({d.spent}h spent so far)</span>
         )}
       </p>
       <p className="text-slate-600">
@@ -69,8 +69,9 @@ export default function SprintCutoffChart() {
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
     const spent = t.timeSpentHours || 0;
-    const remaining = t.estimateHours;
-    const totalHours = isRemaining ? remaining : spent + remaining;
+    const originalEstimate = t.originalEstimateHours || t.estimateHours;
+    const remaining = Math.max(originalEstimate - spent, 0);
+    const totalHours = isRemaining ? remaining : originalEstimate;
     cumulative += totalHours;
     return {
       idx: idx + 1,
@@ -109,7 +110,7 @@ export default function SprintCutoffChart() {
       title='Sprint "Cut-off" Line'
       subtitle={isRemaining
         ? "Cumulative remaining hours by priority — everything above the capacity line is at risk"
-        : "Cumulative hours by priority — everything above the capacity line is at risk"
+        : "Cumulative original estimate by priority — everything above the capacity line is at risk"
       }
       id="chart-cutoff"
       actions={<TimeToggle mode={mode} onChange={setMode} />}
@@ -145,7 +146,7 @@ export default function SprintCutoffChart() {
             tick={{ fontSize: 12, fill: '#64748b' }}
             axisLine={{ stroke: '#cbd5e1' }}
             label={{
-              value: isRemaining ? 'Cumulative Remaining Hours' : 'Cumulative Hours',
+              value: isRemaining ? 'Cumulative Remaining Hours' : 'Cumulative Original Estimate',
               angle: -90,
               position: 'insideLeft',
               offset: 5,

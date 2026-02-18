@@ -62,14 +62,15 @@ export default function CapacityGauges() {
       title="Individual Capacity Gauges"
       subtitle={isRemaining
         ? "Remaining hours vs. total capacity per developer"
-        : "Assigned hours vs. total capacity per developer"
+        : "Original estimate vs. total capacity per developer"
       }
       id="chart-capacity"
       actions={<TimeToggle mode={mode} onChange={setMode} />}
     >
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {devLoads.map((dev) => {
-          const displayHours = isRemaining ? dev.remaining : dev.assigned;
+          const remaining = Math.max(dev.originalEstimate - dev.spent, 0);
+          const displayHours = isRemaining ? remaining : dev.originalEstimate;
           const displayPercent = dev.capacity > 0
             ? Math.round((displayHours / dev.capacity) * 100)
             : 0;
@@ -103,7 +104,7 @@ export default function CapacityGauges() {
               </span>
               {dev.spent > 0 && (
                 <span className="text-xs text-emerald-600 mt-0.5">
-                  {Math.round(dev.spent * 10) / 10}h spent &middot; {Math.round(dev.remaining * 10) / 10}h left
+                  {Math.round(dev.spent * 10) / 10}h spent &middot; {Math.round(remaining * 10) / 10}h left
                 </span>
               )}
               {isOver && (

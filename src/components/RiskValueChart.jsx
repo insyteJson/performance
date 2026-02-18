@@ -48,9 +48,9 @@ function CustomTooltip({ active, payload }) {
       <p className="text-slate-600 text-xs mb-1">{d.summary}</p>
       <div className="flex flex-col gap-0.5 mt-1">
         <span className="text-slate-500">
-          {d.isRemaining ? 'Remaining' : 'Estimate'}: <span className="font-medium text-slate-700">{d.hours}h</span>
+          {d.isRemaining ? 'Remaining' : 'Original Estimate'}: <span className="font-medium text-slate-700">{d.hours}h</span>
           {!d.isRemaining && d.spent > 0 && (
-            <span className="text-emerald-600 ml-1">({d.spent}h spent)</span>
+            <span className="text-emerald-600 ml-1">({d.spent}h spent so far)</span>
           )}
         </span>
         <span className="text-slate-500">
@@ -91,18 +91,20 @@ export default function RiskValueChart() {
   const isRemaining = mode === 'remaining';
 
   const maxHours = Math.max(
-    ...userStories.map((t) =>
-      isRemaining ? t.estimateHours : (t.timeSpentHours || 0) + t.estimateHours
-    ),
+    ...userStories.map((t) => {
+      const orig = t.originalEstimateHours || t.estimateHours;
+      return isRemaining ? Math.max(orig - (t.timeSpentHours || 0), 0) : orig;
+    }),
     12
   );
   const midHours = 6;
 
   const data = userStories.map((t) => {
     const pv = getPriorityValue(t.priority);
+    const orig = t.originalEstimateHours || t.estimateHours;
     const hours = isRemaining
-      ? t.estimateHours
-      : (t.timeSpentHours || 0) + t.estimateHours;
+      ? Math.max(orig - (t.timeSpentHours || 0), 0)
+      : orig;
     return {
       key: t.key || t.id,
       summary: t.summary,
@@ -121,7 +123,7 @@ export default function RiskValueChart() {
       title="Risk vs. Value"
       subtitle={isRemaining
         ? "Remaining effort (hours) vs. priority value — identify quick wins and risk sinks"
-        : "Effort (hours) vs. priority value — identify quick wins and risk sinks"
+        : "Original estimate (hours) vs. priority value — identify quick wins and risk sinks"
       }
       id="chart-risk-value"
       actions={<TimeToggle mode={mode} onChange={setMode} />}
@@ -176,7 +178,7 @@ export default function RiskValueChart() {
             tick={{ fontSize: 12, fill: '#64748b' }}
             axisLine={{ stroke: '#cbd5e1' }}
             label={{
-              value: isRemaining ? 'Remaining Hours' : 'Duration (Hours)',
+              value: isRemaining ? 'Remaining Hours' : 'Original Estimate (Hours)',
               position: 'insideBottom',
               offset: -10,
               style: { fontSize: 12, fill: '#64748b' },
