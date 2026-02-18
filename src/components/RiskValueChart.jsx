@@ -91,18 +91,20 @@ export default function RiskValueChart() {
   const isRemaining = mode === 'remaining';
 
   const maxHours = Math.max(
-    ...userStories.map((t) =>
-      isRemaining ? t.estimateHours : (t.originalEstimateHours || t.estimateHours)
-    ),
+    ...userStories.map((t) => {
+      const orig = t.originalEstimateHours || t.estimateHours;
+      return isRemaining ? Math.max(orig - (t.timeSpentHours || 0), 0) : orig;
+    }),
     12
   );
   const midHours = 6;
 
   const data = userStories.map((t) => {
     const pv = getPriorityValue(t.priority);
+    const orig = t.originalEstimateHours || t.estimateHours;
     const hours = isRemaining
-      ? t.estimateHours
-      : (t.originalEstimateHours || t.estimateHours);
+      ? Math.max(orig - (t.timeSpentHours || 0), 0)
+      : orig;
     return {
       key: t.key || t.id,
       summary: t.summary,

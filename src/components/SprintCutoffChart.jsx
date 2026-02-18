@@ -69,8 +69,8 @@ export default function SprintCutoffChart() {
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
     const spent = t.timeSpentHours || 0;
-    const remaining = t.estimateHours;
     const originalEstimate = t.originalEstimateHours || t.estimateHours;
+    const remaining = Math.max(originalEstimate - spent, 0);
     const totalHours = isRemaining ? remaining : originalEstimate;
     cumulative += totalHours;
     return {
