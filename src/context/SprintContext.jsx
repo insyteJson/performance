@@ -202,6 +202,8 @@ export function SprintProvider({ children }) {
 
   const setPreviousSprintTickets = useCallback(
     (tickets) => dispatch({ type: 'SET_PREVIOUS_SPRINT_TICKETS', payload: tickets }),
+    []
+  );
   const updateExecutiveSummary = useCallback(
     (fields) => dispatch({ type: 'UPDATE_EXECUTIVE_SUMMARY', payload: fields }),
     []
@@ -228,9 +230,11 @@ export function SprintProvider({ children }) {
 
   const devLoadMap = new Map(); // remaining estimate per dev
   const devSpentMap = new Map(); // time spent per dev
+  const devOriginalEstimateMap = new Map(); // original estimate per dev
   state.devs.forEach((d) => {
     devLoadMap.set(d.name, 0);
     devSpentMap.set(d.name, 0);
+    devOriginalEstimateMap.set(d.name, 0);
   });
   // Use subtask-level data for capacity attribution when subtasks exist.
   // This ensures that if multiple devs share work on a user story via subtasks,
@@ -241,12 +245,14 @@ export function SprintProvider({ children }) {
         if (devLoadMap.has(subtask.assignee)) {
           devLoadMap.set(subtask.assignee, devLoadMap.get(subtask.assignee) + (subtask.estimateHours || 0));
           devSpentMap.set(subtask.assignee, devSpentMap.get(subtask.assignee) + (subtask.timeSpentHours || 0));
+          devOriginalEstimateMap.set(subtask.assignee, devOriginalEstimateMap.get(subtask.assignee) + (subtask.originalEstimateHours || subtask.estimateHours || 0));
         }
       });
     } else {
       if (devLoadMap.has(story.assignee)) {
         devLoadMap.set(story.assignee, devLoadMap.get(story.assignee) + story.estimateHours);
         devSpentMap.set(story.assignee, devSpentMap.get(story.assignee) + (story.timeSpentHours || 0));
+        devOriginalEstimateMap.set(story.assignee, devOriginalEstimateMap.get(story.assignee) + (story.originalEstimateHours || story.estimateHours || 0));
       }
     }
   });
@@ -254,12 +260,14 @@ export function SprintProvider({ children }) {
   const devLoads = state.devs.map((d) => {
     const remaining = devLoadMap.get(d.name) || 0;
     const spent = devSpentMap.get(d.name) || 0;
+    const originalEstimate = devOriginalEstimateMap.get(d.name) || 0;
     const total = spent + remaining;
     return {
       ...d,
       assigned: total,
       spent,
       remaining,
+      originalEstimate,
       loadPercent:
         d.capacity > 0 ? Math.round((total / d.capacity) * 100) : 0,
     };
