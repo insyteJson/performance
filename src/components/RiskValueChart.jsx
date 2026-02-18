@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ScatterChart,
   Scatter,
@@ -14,6 +15,7 @@ import {
 import { useSprint } from '../context/SprintContext';
 import { getPriorityValue } from '../utils/xmlParser';
 import ChartCard from './ChartCard';
+import TimeToggle from './TimeToggle';
 
 const QUADRANT_COLORS = {
   quickWin: '#10b981',
@@ -46,8 +48,8 @@ function CustomTooltip({ active, payload }) {
       <p className="text-slate-600 text-xs mb-1">{d.summary}</p>
       <div className="flex flex-col gap-0.5 mt-1">
         <span className="text-slate-500">
-          Estimate: <span className="font-medium text-slate-700">{d.hours}h</span>
-          {d.spent > 0 && (
+          {d.isRemaining ? 'Remaining' : 'Estimate'}: <span className="font-medium text-slate-700">{d.hours}h</span>
+          {!d.isRemaining && d.spent > 0 && (
             <span className="text-emerald-600 ml-1">({d.spent}h spent)</span>
           )}
         </span>
@@ -70,6 +72,7 @@ function CustomTooltip({ active, payload }) {
 
 export default function RiskValueChart() {
   const { userStories } = useSprint();
+  const [mode, setMode] = useState('original');
 
   if (userStories.length === 0) {
     return (
@@ -85,20 +88,30 @@ export default function RiskValueChart() {
     );
   }
 
-  const maxHours = Math.max(...userStories.map((t) => (t.timeSpentHours || 0) + t.estimateHours), 12);
+  const isRemaining = mode === 'remaining';
+
+  const maxHours = Math.max(
+    ...userStories.map((t) =>
+      isRemaining ? t.estimateHours : (t.timeSpentHours || 0) + t.estimateHours
+    ),
+    12
+  );
   const midHours = 6;
 
   const data = userStories.map((t) => {
     const pv = getPriorityValue(t.priority);
-    const totalHours = (t.timeSpentHours || 0) + t.estimateHours;
+    const hours = isRemaining
+      ? t.estimateHours
+      : (t.timeSpentHours || 0) + t.estimateHours;
     return {
       key: t.key || t.id,
       summary: t.summary,
-      hours: Math.round(totalHours * 10) / 10,
+      hours: Math.round(hours * 10) / 10,
       spent: Math.round((t.timeSpentHours || 0) * 10) / 10,
+      isRemaining,
       priorityValue: pv + (Math.random() * 0.3 - 0.15), // jitter to avoid overlap
       priorityRaw: t.priorityRaw || t.priority,
-      quadrant: getQuadrant(totalHours, pv),
+      quadrant: getQuadrant(hours, pv),
       z: 80,
     };
   });
@@ -106,8 +119,12 @@ export default function RiskValueChart() {
   return (
     <ChartCard
       title="Risk vs. Value"
-      subtitle="Effort (hours) vs. priority value — identify quick wins and risk sinks"
+      subtitle={isRemaining
+        ? "Remaining effort (hours) vs. priority value — identify quick wins and risk sinks"
+        : "Effort (hours) vs. priority value — identify quick wins and risk sinks"
+      }
       id="chart-risk-value"
+      actions={<TimeToggle mode={mode} onChange={setMode} />}
     >
       <ResponsiveContainer width="100%" height={360}>
         <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
@@ -159,7 +176,7 @@ export default function RiskValueChart() {
             tick={{ fontSize: 12, fill: '#64748b' }}
             axisLine={{ stroke: '#cbd5e1' }}
             label={{
-              value: 'Duration (Hours)',
+              value: isRemaining ? 'Remaining Hours' : 'Duration (Hours)',
               position: 'insideBottom',
               offset: -10,
               style: { fontSize: 12, fill: '#64748b' },

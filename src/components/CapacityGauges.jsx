@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useSprint } from '../context/SprintContext';
 import ChartCard from './ChartCard';
+import TimeToggle from './TimeToggle';
 
 export function GaugeRing({ percent, size = 120, strokeWidth = 10 }) {
   const radius = (size - strokeWidth) / 2;
@@ -37,6 +39,7 @@ export function GaugeRing({ percent, size = 120, strokeWidth = 10 }) {
 
 export default function CapacityGauges() {
   const { devLoads } = useSprint();
+  const [mode, setMode] = useState('original');
 
   if (devLoads.length === 0) {
     return (
@@ -52,15 +55,25 @@ export default function CapacityGauges() {
     );
   }
 
+  const isRemaining = mode === 'remaining';
+
   return (
     <ChartCard
       title="Individual Capacity Gauges"
-      subtitle="Assigned hours vs. total capacity per developer"
+      subtitle={isRemaining
+        ? "Remaining hours vs. total capacity per developer"
+        : "Assigned hours vs. total capacity per developer"
+      }
       id="chart-capacity"
+      actions={<TimeToggle mode={mode} onChange={setMode} />}
     >
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {devLoads.map((dev) => {
-          const isOver = dev.loadPercent > 100;
+          const displayHours = isRemaining ? dev.remaining : dev.assigned;
+          const displayPercent = dev.capacity > 0
+            ? Math.round((displayHours / dev.capacity) * 100)
+            : 0;
+          const isOver = displayPercent > 100;
           return (
             <div
               key={dev.name}
@@ -71,14 +84,14 @@ export default function CapacityGauges() {
               }`}
             >
               <div className="relative">
-                <GaugeRing percent={dev.loadPercent} />
+                <GaugeRing percent={displayPercent} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span
                     className={`text-2xl font-bold ${
                       isOver ? 'text-red-600' : 'text-slate-800'
                     }`}
                   >
-                    {dev.loadPercent}%
+                    {displayPercent}%
                   </span>
                 </div>
               </div>
@@ -86,7 +99,7 @@ export default function CapacityGauges() {
                 {dev.name}
               </span>
               <span className="text-xs text-slate-500 mt-0.5">
-                {Math.round(dev.assigned * 10) / 10}h / {dev.capacity}h
+                {Math.round(displayHours * 10) / 10}h / {dev.capacity}h
               </span>
               {dev.spent > 0 && (
                 <span className="text-xs text-emerald-600 mt-0.5">
