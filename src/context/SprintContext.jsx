@@ -9,6 +9,11 @@ const initialState = {
   hierarchy: [], // Structured hierarchy tree
   devs: [],
   isLoaded: false,
+  // Previous sprint data — stored for upcoming features, not used in charts/displays
+  previousSprintTickets: [],
+  previousSprintUserStories: [],
+  previousSprintHierarchy: [],
+  isPreviousSprintLoaded: false,
 };
 
 function reducer(state, action) {
@@ -43,6 +48,19 @@ function reducer(state, action) {
         hierarchy,
         devs: [...mergedDevs, ...manualDevs],
         isLoaded: true,
+      };
+    }
+
+    case 'SET_PREVIOUS_SPRINT_TICKETS': {
+      const rawTickets = action.payload;
+      const { allTickets, userStories, hierarchy } = buildHierarchy(rawTickets);
+
+      return {
+        ...state,
+        previousSprintTickets: allTickets,
+        previousSprintUserStories: userStories,
+        previousSprintHierarchy: hierarchy,
+        isPreviousSprintLoaded: true,
       };
     }
 
@@ -168,6 +186,11 @@ export function SprintProvider({ children }) {
     []
   );
 
+  const setPreviousSprintTickets = useCallback(
+    (tickets) => dispatch({ type: 'SET_PREVIOUS_SPRINT_TICKETS', payload: tickets }),
+    []
+  );
+
   const reset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
   // Derived data - use userStories (aggregated) for all calculations
@@ -267,6 +290,7 @@ export function SprintProvider({ children }) {
   const value = {
     ...state,
     setTickets,
+    setPreviousSprintTickets,
     addDev,
     updateDevCapacity,
     removeDev,
