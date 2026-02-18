@@ -30,7 +30,7 @@ export default function TeamManagement({ onNavigateToTeam }) {
               </div>
               <div>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Team Size</p>
-                <p className="text-lg font-bold text-slate-800">
+                <p className="text-lg font-bold text-slate-800 whitespace-nowrap">
                   {devs.length} {devs.length === 1 ? 'Member' : 'Members'}
                 </p>
               </div>
