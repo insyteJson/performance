@@ -14,8 +14,6 @@ const initialState = {
   previousSprintUserStories: [],
   previousSprintHierarchy: [],
   isPreviousSprintLoaded: false,
-  originalSprintCapacity: null, // manually entered: total team hours for the full sprint
-  remainingSprintCapacity: null, // manually entered: team hours left from today to sprint end
   executiveSummary: {
     sprintGoal: '',
     sprintStartDate: '',
@@ -39,12 +37,14 @@ function reducer(state, action) {
       const extractedDevs = extractAssignees(allTickets);
 
       // Merge: keep existing capacity overrides, add new devs
-      const mergedDevs = extractedDevs.map((d) => ({
-        ...d,
-        capacity: existingDevMap.has(d.name)
-          ? existingDevMap.get(d.name).capacity
-          : 40,
-      }));
+      const mergedDevs = extractedDevs.map((d) => {
+        const existing = existingDevMap.get(d.name);
+        return {
+          ...d,
+          originalCapacity: existing ? existing.originalCapacity : 40,
+          remainingCapacity: existing ? existing.remainingCapacity : 40,
+        };
+      });
 
       // Keep manually-added devs that aren't in tickets
       const manualDevs = state.devs.filter(
@@ -82,19 +82,24 @@ function reducer(state, action) {
         ...state,
         devs: [
           ...state.devs,
-          { ...action.payload, capacity: action.payload.capacity || 40, manual: true },
+          {
+            ...action.payload,
+            originalCapacity: action.payload.originalCapacity || 40,
+            remainingCapacity: action.payload.remainingCapacity || 40,
+            manual: true,
+          },
         ],
       };
 
-    case 'UPDATE_DEV_CAPACITY':
+    case 'UPDATE_DEV_CAPACITY': {
+      const { name, ...fields } = action.payload;
       return {
         ...state,
         devs: state.devs.map((d) =>
-          d.name === action.payload.name
-            ? { ...d, capacity: action.payload.capacity }
-            : d
+          d.name === name ? { ...d, ...fields } : d
         ),
       };
+    }
 
     case 'REMOVE_DEV':
       return {
@@ -134,12 +139,14 @@ function reducer(state, action) {
       // Re-extract assignees to include any new assignee
       const existingDevMap = new Map(state.devs.map((d) => [d.name, d]));
       const extractedDevs = extractAssignees(updAllTickets);
-      const mergedDevs = extractedDevs.map((d) => ({
-        ...d,
-        capacity: existingDevMap.has(d.name)
-          ? existingDevMap.get(d.name).capacity
-          : 40,
-      }));
+      const mergedDevs = extractedDevs.map((d) => {
+        const existing = existingDevMap.get(d.name);
+        return {
+          ...d,
+          originalCapacity: existing ? existing.originalCapacity : 40,
+          remainingCapacity: existing ? existing.remainingCapacity : 40,
+        };
+      });
       const manualDevs = state.devs.filter(
         (d) => d.manual && !extractedDevs.find((ed) => ed.name === d.name)
       );
@@ -157,13 +164,6 @@ function reducer(state, action) {
       return {
         ...state,
         executiveSummary: { ...state.executiveSummary, ...action.payload },
-      };
-
-    case 'SET_SPRINT_CAPACITY':
-      return {
-        ...state,
-        originalSprintCapacity: action.payload.originalSprintCapacity,
-        remainingSprintCapacity: action.payload.remainingSprintCapacity,
       };
 
     case 'RESET':
@@ -188,8 +188,8 @@ export function SprintProvider({ children }) {
   );
 
   const updateDevCapacity = useCallback(
-    (name, capacity) =>
-      dispatch({ type: 'UPDATE_DEV_CAPACITY', payload: { name, capacity } }),
+    (name, fields) =>
+      dispatch({ type: 'UPDATE_DEV_CAPACITY', payload: { name, ...fields } }),
     []
   );
 
@@ -218,19 +218,12 @@ export function SprintProvider({ children }) {
     []
   );
 
-  const setSprintCapacity = useCallback(
-    (original, remaining) =>
-      dispatch({
-        type: 'SET_SPRINT_CAPACITY',
-        payload: { originalSprintCapacity: original, remainingSprintCapacity: remaining },
-      }),
-    []
-  );
-
   const reset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
   // Derived data - use userStories (aggregated) for all calculations
-  const totalCapacity = state.devs.reduce((sum, d) => sum + d.capacity, 0);
+  const totalOriginalCapacity = state.devs.reduce((sum, d) => sum + (d.originalCapacity || 0), 0);
+  const totalRemainingCapacity = state.devs.reduce((sum, d) => sum + (d.remainingCapacity || 0), 0);
+  const totalCapacity = totalOriginalCapacity;
   const totalAssigned = state.userStories.reduce(
     (sum, t) => sum + t.estimateHours,
     0
@@ -287,7 +280,7 @@ export function SprintProvider({ children }) {
       remaining,
       originalEstimate,
       loadPercent:
-        d.capacity > 0 ? Math.round((total / d.capacity) * 100) : 0,
+        d.originalCapacity > 0 ? Math.round((total / d.originalCapacity) * 100) : 0,
     };
   });
 
@@ -339,11 +332,10 @@ export function SprintProvider({ children }) {
     updateTicket,
     updateTicketAssignee,
     updateExecutiveSummary,
-    setSprintCapacity,
     reset,
     totalCapacity,
-    originalSprintCapacity: state.originalSprintCapacity,
-    remainingSprintCapacity: state.remainingSprintCapacity,
+    totalOriginalCapacity,
+    totalRemainingCapacity,
     totalAssigned,
     totalTimeSpent,
     totalWork,
