@@ -64,8 +64,8 @@ export default function TeamLoadChart() {
     assigned: d.assigned,
     spent: d.spent,
     remainingEst: d.remaining,
-    capacity: d.capacity,
-    capacityLeft: Math.max(d.capacity - d.assigned, 0),
+    capacity: d.originalCapacity,
+    capacityLeft: Math.max(d.originalCapacity - d.assigned, 0),
     loadPercent: d.loadPercent,
   }));
 

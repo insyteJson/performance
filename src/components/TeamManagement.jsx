@@ -89,7 +89,7 @@ export default function TeamManagement({ onNavigateToTeam }) {
                     </span>
                     <span className="text-xs text-slate-500 flex items-center gap-1">
                       <Clock size={11} />
-                      {dev.capacity}h per sprint
+                      {dev.originalCapacity}h / {dev.remainingCapacity}h
                     </span>
                   </div>
                   {isOver && (

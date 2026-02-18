@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   UserPlus,
   Trash2,
@@ -7,8 +7,6 @@ import {
   X,
   Users,
   Clock,
-  Calendar,
-  Timer,
 } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
 import { GaugeRing } from './CapacityGauges';
@@ -16,19 +14,12 @@ import { GaugeRing } from './CapacityGauges';
 export default function TeamPage() {
   const {
     devs, devLoads, addDev, updateDevCapacity, removeDev,
-    totalCapacity, originalSprintCapacity, remainingSprintCapacity, setSprintCapacity,
+    totalCapacity, totalOriginalCapacity, totalRemainingCapacity,
   } = useSprint();
   const [newDevName, setNewDevName] = useState('');
-  const [origCap, setOrigCap] = useState('');
-  const [remCap, setRemCap] = useState('');
-
-  // Sync local inputs from context (on mount / when context changes externally)
-  useEffect(() => {
-    if (originalSprintCapacity != null) setOrigCap(String(originalSprintCapacity));
-    if (remainingSprintCapacity != null) setRemCap(String(remainingSprintCapacity));
-  }, [originalSprintCapacity, remainingSprintCapacity]);
   const [editingDev, setEditingDev] = useState(null);
-  const [editCapacity, setEditCapacity] = useState('');
+  const [editOriginal, setEditOriginal] = useState('');
+  const [editRemaining, setEditRemaining] = useState('');
 
   const handleAddDev = () => {
     if (!newDevName.trim()) return;
@@ -38,14 +29,19 @@ export default function TeamPage() {
 
   const startEdit = (dev) => {
     setEditingDev(dev.name);
-    setEditCapacity(String(dev.capacity));
+    setEditOriginal(String(dev.originalCapacity));
+    setEditRemaining(String(dev.remainingCapacity));
   };
 
   const saveEdit = () => {
     if (editingDev) {
-      updateDevCapacity(editingDev, parseFloat(editCapacity) || 40);
+      updateDevCapacity(editingDev, {
+        originalCapacity: parseFloat(editOriginal) || 40,
+        remainingCapacity: parseFloat(editRemaining) || 40,
+      });
       setEditingDev(null);
-      setEditCapacity('');
+      setEditOriginal('');
+      setEditRemaining('');
     }
   };
 
@@ -53,74 +49,8 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      {/* Sprint Capacity Inputs */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-1">
-          <Calendar size={20} />
-          Sprint Capacity
-        </h2>
-        <p className="text-sm text-slate-500 mb-4">
-          Set the team-wide capacity for the full sprint and the remaining capacity from today.
-          Charts will use these values when toggling between Original and Remaining views.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
-              Original Capacity
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 flex-1 bg-slate-50 rounded-xl px-4 py-2.5 border-2 border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
-                <Timer size={16} className="text-indigo-400 shrink-0" />
-                <input
-                  type="number"
-                  value={origCap}
-                  onChange={(e) => {
-                    setOrigCap(e.target.value);
-                    const val = parseFloat(e.target.value);
-                    setSprintCapacity(
-                      val > 0 ? val : null,
-                      remainingSprintCapacity,
-                    );
-                  }}
-                  placeholder={`${totalCapacity || 0}`}
-                  className="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
-                />
-                <span className="text-xs text-slate-400 shrink-0">hours</span>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">Sprint start → sprint end</p>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
-              Remaining Capacity
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 flex-1 bg-slate-50 rounded-xl px-4 py-2.5 border-2 border-slate-200 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition-all">
-                <Timer size={16} className="text-emerald-400 shrink-0" />
-                <input
-                  type="number"
-                  value={remCap}
-                  onChange={(e) => {
-                    setRemCap(e.target.value);
-                    const val = parseFloat(e.target.value);
-                    setSprintCapacity(
-                      originalSprintCapacity,
-                      val > 0 ? val : null,
-                    );
-                  }}
-                  placeholder={`${totalCapacity || 0}`}
-                  className="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
-                />
-                <span className="text-xs text-slate-400 shrink-0">hours</span>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">Today → sprint end</p>
-          </div>
-        </div>
-      </div>
-
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-100 rounded-lg">
@@ -143,10 +73,10 @@ export default function TeamPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Sprint Capacity
+                Original Capacity
               </p>
               <p className="text-2xl font-bold text-slate-800">
-                {totalCapacity}h
+                {totalOriginalCapacity}h
               </p>
             </div>
           </div>
@@ -158,11 +88,26 @@ export default function TeamPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                Avg. Capacity
+                Remaining Capacity
+              </p>
+              <p className="text-2xl font-bold text-slate-800">
+                {totalRemainingCapacity}h
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-100 rounded-lg">
+              <Clock size={20} className="text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Avg. Original
               </p>
               <p className="text-2xl font-bold text-slate-800">
                 {devs.length > 0
-                  ? Math.round(totalCapacity / devs.length)
+                  ? Math.round(totalOriginalCapacity / devs.length)
                   : 0}
                 h
               </p>
@@ -179,7 +124,7 @@ export default function TeamPage() {
             Team Members
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Add developers, set capacity per sprint, and monitor individual load
+            Add developers, set original &amp; remaining capacity per sprint, and monitor individual load
           </p>
         </div>
 
@@ -267,18 +212,34 @@ export default function TeamPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       {editingDev === dev.name ? (
                         <>
-                          <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2 py-1 border border-slate-200">
-                            <input
-                              type="number"
-                              value={editCapacity}
-                              onChange={(e) => setEditCapacity(e.target.value)}
-                              className="w-16 px-1 text-sm bg-transparent focus:outline-none"
-                              onKeyDown={(e) =>
-                                e.key === 'Enter' && saveEdit()
-                              }
-                              autoFocus
-                            />
-                            <span className="text-xs text-slate-400">h</span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-medium text-slate-400 uppercase">Original</span>
+                              <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2 py-1 border border-slate-200">
+                                <input
+                                  type="number"
+                                  value={editOriginal}
+                                  onChange={(e) => setEditOriginal(e.target.value)}
+                                  className="w-14 px-1 text-sm bg-transparent focus:outline-none"
+                                  onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                                  autoFocus
+                                />
+                                <span className="text-xs text-slate-400">h</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-medium text-slate-400 uppercase">Remaining</span>
+                              <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2 py-1 border border-emerald-200">
+                                <input
+                                  type="number"
+                                  value={editRemaining}
+                                  onChange={(e) => setEditRemaining(e.target.value)}
+                                  className="w-14 px-1 text-sm bg-transparent focus:outline-none"
+                                  onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                                />
+                                <span className="text-xs text-slate-400">h</span>
+                              </div>
+                            </div>
                           </div>
                           <button
                             onClick={saveEdit}
@@ -295,10 +256,16 @@ export default function TeamPage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-sm font-medium text-slate-600 flex items-center gap-1 mr-1">
-                            <Clock size={14} className="text-slate-400" />
-                            {dev.capacity}h
-                          </span>
+                          <div className="flex items-center gap-3 mr-1">
+                            <span className="text-sm font-medium text-slate-600 flex items-center gap-1" title="Original capacity (sprint start → end)">
+                              <Clock size={14} className="text-indigo-400" />
+                              {dev.originalCapacity}h
+                            </span>
+                            <span className="text-sm font-medium text-slate-600 flex items-center gap-1" title="Remaining capacity (today → sprint end)">
+                              <Clock size={14} className="text-emerald-400" />
+                              {dev.remainingCapacity}h
+                            </span>
+                          </div>
                           {isOver && (
                             <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-0.5 rounded-full mr-1">
                               OVERLOADED

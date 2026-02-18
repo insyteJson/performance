@@ -47,7 +47,7 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function SprintCutoffChart() {
-  const { ticketsByPriority, totalCapacity, originalSprintCapacity, remainingSprintCapacity } = useSprint();
+  const { ticketsByPriority, totalOriginalCapacity, totalRemainingCapacity } = useSprint();
   const [mode, setMode] = useState('original');
 
   if (ticketsByPriority.length === 0) {
@@ -65,9 +65,7 @@ export default function SprintCutoffChart() {
   }
 
   const isRemaining = mode === 'remaining';
-  const effectiveCapacity = isRemaining
-    ? (remainingSprintCapacity ?? totalCapacity)
-    : (originalSprintCapacity ?? totalCapacity);
+  const effectiveCapacity = isRemaining ? totalRemainingCapacity : totalOriginalCapacity;
 
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
