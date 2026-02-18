@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, LayoutDashboard, Upload, Users, Table2 } from 'lucide-react';
+import { BarChart3, LayoutDashboard, Upload, Users, Table2, Shield } from 'lucide-react';
 import { SprintProvider, useSprint } from './context/SprintContext';
 import DataInput from './components/DataInput';
 import TeamManagement from './components/TeamManagement';
@@ -84,6 +84,17 @@ function Dashboard() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setView('summary')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  view === 'summary'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Shield size={15} />
+                Summary
+              </button>
             </div>
           </div>
         </div>
@@ -91,7 +102,10 @@ function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {view === 'team' ? (
+        {view === 'summary' ? (
+          /* Full-width Executive Summary page */
+          <ExecutiveSummary />
+        ) : view === 'team' ? (
           /* Full-width Team page */
           <TeamPage />
         ) : view === 'tickets' && isLoaded ? (
@@ -139,9 +153,6 @@ function Dashboard() {
             <div className="min-w-0 space-y-6">
               {isLoaded ? (
                 <>
-                  {/* Executive Summary */}
-                  <ExecutiveSummary />
-
                   {/* Summary KPI Cards */}
                   <SummaryCards />
 
