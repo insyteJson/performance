@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AreaChart,
   Area,
@@ -11,6 +12,7 @@ import {
 import { useSprint } from '../context/SprintContext';
 import { getPriorityLabel, getPriorityColor } from '../utils/xmlParser';
 import ChartCard from './ChartCard';
+import TimeToggle from './TimeToggle';
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -20,8 +22,8 @@ function CustomTooltip({ active, payload }) {
       <p className="font-semibold text-slate-800">{d.key}</p>
       <p className="text-xs text-slate-500 mb-1">{d.summary}</p>
       <p className="text-slate-600">
-        Total: <span className="font-medium">{d.totalHours}h</span>
-        {d.spent > 0 && (
+        {d.isRemaining ? 'Remaining' : 'Total'}: <span className="font-medium">{d.totalHours}h</span>
+        {!d.isRemaining && d.spent > 0 && (
           <span className="text-slate-400"> ({d.spent}h spent + {d.remaining}h remaining)</span>
         )}
       </p>
@@ -46,6 +48,7 @@ function CustomTooltip({ active, payload }) {
 
 export default function SprintCutoffChart() {
   const { ticketsByPriority, totalCapacity } = useSprint();
+  const [mode, setMode] = useState('original');
 
   if (ticketsByPriority.length === 0) {
     return (
@@ -61,11 +64,13 @@ export default function SprintCutoffChart() {
     );
   }
 
+  const isRemaining = mode === 'remaining';
+
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
     const spent = t.timeSpentHours || 0;
     const remaining = t.estimateHours;
-    const totalHours = spent + remaining;
+    const totalHours = isRemaining ? remaining : spent + remaining;
     cumulative += totalHours;
     return {
       idx: idx + 1,
@@ -77,6 +82,7 @@ export default function SprintCutoffChart() {
       cumulative: Math.round(cumulative * 10) / 10,
       priority: t.priority,
       atRisk: cumulative > totalCapacity,
+      isRemaining,
     };
   });
 
@@ -101,8 +107,12 @@ export default function SprintCutoffChart() {
   return (
     <ChartCard
       title='Sprint "Cut-off" Line'
-      subtitle="Cumulative hours by priority — everything above the capacity line is at risk"
+      subtitle={isRemaining
+        ? "Cumulative remaining hours by priority — everything above the capacity line is at risk"
+        : "Cumulative hours by priority — everything above the capacity line is at risk"
+      }
       id="chart-cutoff"
+      actions={<TimeToggle mode={mode} onChange={setMode} />}
     >
       <ResponsiveContainer width="100%" height={360}>
         <AreaChart data={safeData} margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
@@ -135,7 +145,7 @@ export default function SprintCutoffChart() {
             tick={{ fontSize: 12, fill: '#64748b' }}
             axisLine={{ stroke: '#cbd5e1' }}
             label={{
-              value: 'Cumulative Hours',
+              value: isRemaining ? 'Cumulative Remaining Hours' : 'Cumulative Hours',
               angle: -90,
               position: 'insideLeft',
               offset: 5,
