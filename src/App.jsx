@@ -10,6 +10,7 @@ import RiskValueChart from './components/RiskValueChart';
 import EpicDonutChart from './components/EpicDonutChart';
 import SprintCutoffChart from './components/SprintCutoffChart';
 import ExportPanel from './components/ExportPanel';
+import ExecutiveSummary from './components/ExecutiveSummary';
 import TicketTable from './components/TicketTable';
 import TeamPage from './components/TeamPage';
 
@@ -138,6 +139,9 @@ function Dashboard() {
             <div className="min-w-0 space-y-6">
               {isLoaded ? (
                 <>
+                  {/* Executive Summary */}
+                  <ExecutiveSummary />
+
                   {/* Summary KPI Cards */}
                   <SummaryCards />
 
