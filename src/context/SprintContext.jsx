@@ -14,6 +14,14 @@ const initialState = {
   previousSprintUserStories: [],
   previousSprintHierarchy: [],
   isPreviousSprintLoaded: false,
+  executiveSummary: {
+    sprintGoal: '',
+    sprintStartDate: '',
+    sprintEndDate: '',
+    confidenceLevel: '', // 'green' | 'yellow' | 'red'
+    keyRisks: '',
+    deliveryForecast: '', // 'on-track' | 'at-risk' | 'needs-attention'
+  },
 };
 
 function reducer(state, action) {
@@ -143,6 +151,12 @@ function reducer(state, action) {
       };
     }
 
+    case 'UPDATE_EXECUTIVE_SUMMARY':
+      return {
+        ...state,
+        executiveSummary: { ...state.executiveSummary, ...action.payload },
+      };
+
     case 'RESET':
       return initialState;
 
@@ -188,6 +202,8 @@ export function SprintProvider({ children }) {
 
   const setPreviousSprintTickets = useCallback(
     (tickets) => dispatch({ type: 'SET_PREVIOUS_SPRINT_TICKETS', payload: tickets }),
+  const updateExecutiveSummary = useCallback(
+    (fields) => dispatch({ type: 'UPDATE_EXECUTIVE_SUMMARY', payload: fields }),
     []
   );
 
@@ -296,6 +312,7 @@ export function SprintProvider({ children }) {
     removeDev,
     updateTicket,
     updateTicketAssignee,
+    updateExecutiveSummary,
     reset,
     totalCapacity,
     totalAssigned,
@@ -312,6 +329,7 @@ export function SprintProvider({ children }) {
     allTickets: state.tickets,
     userStories: state.userStories,
     hierarchy: state.hierarchy,
+    executiveSummary: state.executiveSummary,
   };
 
   return (
