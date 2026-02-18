@@ -14,6 +14,8 @@ const initialState = {
   previousSprintUserStories: [],
   previousSprintHierarchy: [],
   isPreviousSprintLoaded: false,
+  originalSprintCapacity: null, // manually entered: total team hours for the full sprint
+  remainingSprintCapacity: null, // manually entered: team hours left from today to sprint end
   executiveSummary: {
     sprintGoal: '',
     sprintStartDate: '',
@@ -157,6 +159,13 @@ function reducer(state, action) {
         executiveSummary: { ...state.executiveSummary, ...action.payload },
       };
 
+    case 'SET_SPRINT_CAPACITY':
+      return {
+        ...state,
+        originalSprintCapacity: action.payload.originalSprintCapacity,
+        remainingSprintCapacity: action.payload.remainingSprintCapacity,
+      };
+
     case 'RESET':
       return initialState;
 
@@ -206,6 +215,15 @@ export function SprintProvider({ children }) {
   );
   const updateExecutiveSummary = useCallback(
     (fields) => dispatch({ type: 'UPDATE_EXECUTIVE_SUMMARY', payload: fields }),
+    []
+  );
+
+  const setSprintCapacity = useCallback(
+    (original, remaining) =>
+      dispatch({
+        type: 'SET_SPRINT_CAPACITY',
+        payload: { originalSprintCapacity: original, remainingSprintCapacity: remaining },
+      }),
     []
   );
 
@@ -321,8 +339,11 @@ export function SprintProvider({ children }) {
     updateTicket,
     updateTicketAssignee,
     updateExecutiveSummary,
+    setSprintCapacity,
     reset,
     totalCapacity,
+    originalSprintCapacity: state.originalSprintCapacity,
+    remainingSprintCapacity: state.remainingSprintCapacity,
     totalAssigned,
     totalTimeSpent,
     totalWork,

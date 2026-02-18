@@ -38,7 +38,7 @@ export function GaugeRing({ percent, size = 120, strokeWidth = 10 }) {
 }
 
 export default function CapacityGauges() {
-  const { devLoads } = useSprint();
+  const { devLoads, totalCapacity, originalSprintCapacity, remainingSprintCapacity } = useSprint();
   const [mode, setMode] = useState('original');
 
   if (devLoads.length === 0) {
@@ -57,12 +57,17 @@ export default function CapacityGauges() {
 
   const isRemaining = mode === 'remaining';
 
+  // Scale individual dev capacity when sprint-level capacity is set.
+  // e.g. if original sprint cap = 200h but remaining = 100h, each dev gets 50% of their capacity.
+  const sprintCap = isRemaining ? remainingSprintCapacity : originalSprintCapacity;
+  const capScale = (sprintCap != null && totalCapacity > 0) ? sprintCap / totalCapacity : 1;
+
   return (
     <ChartCard
       title="Individual Capacity Gauges"
       subtitle={isRemaining
-        ? "Remaining hours vs. total capacity per developer"
-        : "Original estimate vs. total capacity per developer"
+        ? "Remaining hours vs. remaining capacity per developer"
+        : "Original estimate vs. original capacity per developer"
       }
       id="chart-capacity"
       actions={<TimeToggle mode={mode} onChange={setMode} />}
@@ -71,8 +76,9 @@ export default function CapacityGauges() {
         {devLoads.map((dev) => {
           const remaining = Math.max(dev.originalEstimate - dev.spent, 0);
           const displayHours = isRemaining ? remaining : dev.originalEstimate;
-          const displayPercent = dev.capacity > 0
-            ? Math.round((displayHours / dev.capacity) * 100)
+          const effectiveCapacity = Math.round(dev.capacity * capScale * 10) / 10;
+          const displayPercent = effectiveCapacity > 0
+            ? Math.round((displayHours / effectiveCapacity) * 100)
             : 0;
           const isOver = displayPercent > 100;
           return (
@@ -100,7 +106,7 @@ export default function CapacityGauges() {
                 {dev.name}
               </span>
               <span className="text-xs text-slate-500 mt-0.5">
-                {Math.round(displayHours * 10) / 10}h / {dev.capacity}h
+                {Math.round(displayHours * 10) / 10}h / {effectiveCapacity}h
               </span>
               {dev.spent > 0 && (
                 <span className="text-xs text-emerald-600 mt-0.5">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   UserPlus,
   Trash2,
@@ -7,14 +7,26 @@ import {
   X,
   Users,
   Clock,
+  Calendar,
+  Timer,
 } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
 import { GaugeRing } from './CapacityGauges';
 
 export default function TeamPage() {
-  const { devs, devLoads, addDev, updateDevCapacity, removeDev, totalCapacity } =
-    useSprint();
+  const {
+    devs, devLoads, addDev, updateDevCapacity, removeDev,
+    totalCapacity, originalSprintCapacity, remainingSprintCapacity, setSprintCapacity,
+  } = useSprint();
   const [newDevName, setNewDevName] = useState('');
+  const [origCap, setOrigCap] = useState('');
+  const [remCap, setRemCap] = useState('');
+
+  // Sync local inputs from context (on mount / when context changes externally)
+  useEffect(() => {
+    if (originalSprintCapacity != null) setOrigCap(String(originalSprintCapacity));
+    if (remainingSprintCapacity != null) setRemCap(String(remainingSprintCapacity));
+  }, [originalSprintCapacity, remainingSprintCapacity]);
   const [editingDev, setEditingDev] = useState(null);
   const [editCapacity, setEditCapacity] = useState('');
 
@@ -41,6 +53,72 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
+      {/* Sprint Capacity Inputs */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-1">
+          <Calendar size={20} />
+          Sprint Capacity
+        </h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Set the team-wide capacity for the full sprint and the remaining capacity from today.
+          Charts will use these values when toggling between Original and Remaining views.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+              Original Capacity
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 flex-1 bg-slate-50 rounded-xl px-4 py-2.5 border-2 border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                <Timer size={16} className="text-indigo-400 shrink-0" />
+                <input
+                  type="number"
+                  value={origCap}
+                  onChange={(e) => {
+                    setOrigCap(e.target.value);
+                    const val = parseFloat(e.target.value);
+                    setSprintCapacity(
+                      val > 0 ? val : null,
+                      remainingSprintCapacity,
+                    );
+                  }}
+                  placeholder={`${totalCapacity || 0}`}
+                  className="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
+                />
+                <span className="text-xs text-slate-400 shrink-0">hours</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">Sprint start → sprint end</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+              Remaining Capacity
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 flex-1 bg-slate-50 rounded-xl px-4 py-2.5 border-2 border-slate-200 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition-all">
+                <Timer size={16} className="text-emerald-400 shrink-0" />
+                <input
+                  type="number"
+                  value={remCap}
+                  onChange={(e) => {
+                    setRemCap(e.target.value);
+                    const val = parseFloat(e.target.value);
+                    setSprintCapacity(
+                      originalSprintCapacity,
+                      val > 0 ? val : null,
+                    );
+                  }}
+                  placeholder={`${totalCapacity || 0}`}
+                  className="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
+                />
+                <span className="text-xs text-slate-400 shrink-0">hours</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">Today → sprint end</p>
+          </div>
+        </div>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">

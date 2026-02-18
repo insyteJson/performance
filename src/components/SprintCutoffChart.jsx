@@ -47,7 +47,7 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function SprintCutoffChart() {
-  const { ticketsByPriority, totalCapacity } = useSprint();
+  const { ticketsByPriority, totalCapacity, originalSprintCapacity, remainingSprintCapacity } = useSprint();
   const [mode, setMode] = useState('original');
 
   if (ticketsByPriority.length === 0) {
@@ -65,6 +65,9 @@ export default function SprintCutoffChart() {
   }
 
   const isRemaining = mode === 'remaining';
+  const effectiveCapacity = isRemaining
+    ? (remainingSprintCapacity ?? totalCapacity)
+    : (originalSprintCapacity ?? totalCapacity);
 
   let cumulative = 0;
   const data = ticketsByPriority.map((t, idx) => {
@@ -82,7 +85,7 @@ export default function SprintCutoffChart() {
       remaining: Math.round(remaining * 10) / 10,
       cumulative: Math.round(cumulative * 10) / 10,
       priority: t.priority,
-      atRisk: cumulative > totalCapacity,
+      atRisk: cumulative > effectiveCapacity,
       isRemaining,
     };
   });
@@ -177,12 +180,12 @@ export default function SprintCutoffChart() {
 
           {/* Capacity line */}
           <ReferenceLine
-            y={totalCapacity}
+            y={effectiveCapacity}
             stroke="#f59e0b"
             strokeWidth={2}
             strokeDasharray="8 4"
             label={{
-              value: `Team Capacity: ${totalCapacity}h`,
+              value: `${isRemaining ? 'Remaining' : 'Original'} Capacity: ${effectiveCapacity}h`,
               position: 'insideTopRight',
               style: { fontSize: 12, fill: '#f59e0b', fontWeight: 600 },
             }}
