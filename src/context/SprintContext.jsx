@@ -9,6 +9,11 @@ const initialState = {
   hierarchy: [], // Structured hierarchy tree
   devs: [],
   isLoaded: false,
+  // Previous sprint data — stored for upcoming features, not used in charts/displays
+  previousSprintTickets: [],
+  previousSprintUserStories: [],
+  previousSprintHierarchy: [],
+  isPreviousSprintLoaded: false,
   executiveSummary: {
     sprintGoal: '',
     sprintStartDate: '',
@@ -51,6 +56,19 @@ function reducer(state, action) {
         hierarchy,
         devs: [...mergedDevs, ...manualDevs],
         isLoaded: true,
+      };
+    }
+
+    case 'SET_PREVIOUS_SPRINT_TICKETS': {
+      const rawTickets = action.payload;
+      const { allTickets, userStories, hierarchy } = buildHierarchy(rawTickets);
+
+      return {
+        ...state,
+        previousSprintTickets: allTickets,
+        previousSprintUserStories: userStories,
+        previousSprintHierarchy: hierarchy,
+        isPreviousSprintLoaded: true,
       };
     }
 
@@ -182,6 +200,8 @@ export function SprintProvider({ children }) {
     []
   );
 
+  const setPreviousSprintTickets = useCallback(
+    (tickets) => dispatch({ type: 'SET_PREVIOUS_SPRINT_TICKETS', payload: tickets }),
   const updateExecutiveSummary = useCallback(
     (fields) => dispatch({ type: 'UPDATE_EXECUTIVE_SUMMARY', payload: fields }),
     []
@@ -286,6 +306,7 @@ export function SprintProvider({ children }) {
   const value = {
     ...state,
     setTickets,
+    setPreviousSprintTickets,
     addDev,
     updateDevCapacity,
     removeDev,

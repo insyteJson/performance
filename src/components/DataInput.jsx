@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, ChevronRight, ChevronDown } from 'lucide-react';
 import { useSprint } from '../context/SprintContext';
 import { parseXML, parseText } from '../utils/xmlParser';
 
-export default function DataInput() {
-  const { setTickets, tickets } = useSprint();
+function ImportSection({ title, description, onImport, loadedCount, collapsible = false, defaultOpen = true }) {
   const [activeTab, setActiveTab] = useState('xml');
   const [textInput, setTextInput] = useState('');
   const [error, setError] = useState('');
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const fileInputRef = useRef(null);
 
   const handleFileUpload = (e) => {
@@ -23,7 +23,7 @@ export default function DataInput() {
           setError('No tickets found in the XML file. Check the format.');
           return;
         }
-        setTickets(parsed);
+        onImport(parsed);
       } catch (err) {
         setError(err.message);
       }
@@ -41,11 +41,121 @@ export default function DataInput() {
         );
         return;
       }
-      setTickets(parsed);
+      onImport(parsed);
     } catch (err) {
       setError(err.message);
     }
   };
+
+  return (
+    <div>
+      {/* Section Header */}
+      <div
+        className={`px-6 py-4 border-b border-slate-200 ${collapsible ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+        onClick={collapsible ? () => setIsOpen(!isOpen) : undefined}
+      >
+        <div className="flex items-center gap-2">
+          {collapsible && (
+            isOpen
+              ? <ChevronDown size={16} className="text-slate-400" />
+              : <ChevronRight size={16} className="text-slate-400" />
+          )}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+          </div>
+        </div>
+      </div>
+
+      {isOpen && (
+        <>
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => setActiveTab('xml')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'xml'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Upload size={16} className="inline mr-2 -mt-0.5" />
+              XML Upload
+            </button>
+            <button
+              onClick={() => setActiveTab('text')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'text'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <FileText size={16} className="inline mr-2 -mt-0.5" />
+              Plain Text
+            </button>
+          </div>
+
+          {/* Input Area */}
+          <div className="p-6">
+            {activeTab === 'xml' ? (
+              <div className="space-y-4">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors"
+                >
+                  <Upload size={32} className="mx-auto text-slate-400 mb-3" />
+                  <p className="text-sm font-medium text-slate-600">
+                    Click to upload XML file
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Jira RSS/XML export format
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xml"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <textarea
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder={`Paste ticket data (one per line):\nKEY, Summary, Priority, Assignee, Hours, Epic\n\nExample:\nPROJ-1, Build login page, High, Alice, 8, Auth\nPROJ-2, Fix bug #42, Highest, Bob, 4, Bugfix`}
+                  className="w-full h-40 p-3 border border-slate-300 rounded-lg text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleTextParse}
+                  className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  Parse Tickets
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {loadedCount > 0 && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+                {loadedCount} tickets loaded successfully
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function DataInput() {
+  const { setTickets, setPreviousSprintTickets, tickets, previousSprintTickets } = useSprint();
 
   const handleLoadSample = () => {
     const sampleXML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -257,9 +367,8 @@ export default function DataInput() {
     try {
       const parsed = parseXML(sampleXML);
       setTickets(parsed);
-      setError('');
-    } catch (err) {
-      setError(err.message);
+    } catch {
+      // sample data should always parse successfully
     }
   };
 
@@ -273,92 +382,36 @@ export default function DataInput() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      {/* Upcoming Sprint Import */}
+      <ImportSection
+        title="Upcoming Sprint"
+        description="Tickets for the next sprint — shown in all charts and tables"
+        onImport={setTickets}
+        loadedCount={tickets.length}
+      />
+
+      {/* Sample Data Button */}
+      <div className="px-6 pb-4">
         <button
-          onClick={() => setActiveTab('xml')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'xml'
-              ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
+          onClick={handleLoadSample}
+          className="w-full py-2.5 px-4 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
         >
-          <Upload size={16} className="inline mr-2 -mt-0.5" />
-          XML Upload
-        </button>
-        <button
-          onClick={() => setActiveTab('text')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'text'
-              ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <FileText size={16} className="inline mr-2 -mt-0.5" />
-          Plain Text
+          Load Sample Data (15 tickets, 4 devs)
         </button>
       </div>
 
-      {/* Input Area */}
-      <div className="p-6">
-        {activeTab === 'xml' ? (
-          <div className="space-y-4">
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors"
-            >
-              <Upload size={32} className="mx-auto text-slate-400 mb-3" />
-              <p className="text-sm font-medium text-slate-600">
-                Click to upload XML file
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Jira RSS/XML export format
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xml"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </div>
-            <button
-              onClick={handleLoadSample}
-              className="w-full py-2.5 px-4 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
-            >
-              Load Sample Data (15 tickets, 4 devs)
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <textarea
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder={`Paste ticket data (one per line):\nKEY, Summary, Priority, Assignee, Hours, Epic\n\nExample:\nPROJ-1, Build login page, High, Alice, 8, Auth\nPROJ-2, Fix bug #42, Highest, Bob, 4, Bugfix`}
-              className="w-full h-40 p-3 border border-slate-300 rounded-lg text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-            <button
-              onClick={handleTextParse}
-              className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              Parse Tickets
-            </button>
-          </div>
-        )}
+      {/* Divider */}
+      <div className="border-t border-slate-200" />
 
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {tickets.length > 0 && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
-            {tickets.length} tickets loaded successfully
-          </div>
-        )}
-      </div>
-
+      {/* Previous Sprint Import */}
+      <ImportSection
+        title="Previous Sprint"
+        description="Stored for upcoming features — not shown in charts or tables"
+        onImport={setPreviousSprintTickets}
+        loadedCount={previousSprintTickets.length}
+        collapsible
+        defaultOpen={false}
+      />
     </div>
   );
 }
